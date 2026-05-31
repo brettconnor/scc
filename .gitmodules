@@ -1,0 +1,12 @@
+[submodule "codeguard"]
+	path = codeguard
+	url = https://github.com/cosai-oasis/project-codeguard.git
+	branch = main
+[submodule "scc-sdk"]
+	path = scc-sdk
+	url = https://github.com/CiscoDevNet/cisco-scc-python-sdk.git
+	branch = main
+[submodule "pyagent"]
+	path = pyagent
+	url = https://github.com/pritomgogoi/cisco-live-agent.git
+	branch = main
