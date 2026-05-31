@@ -48,6 +48,6 @@ ENV/
 *.log
 
 # Sub repositories
-codeguard/
-pyagent/
-scc-sdk/
+codeguard/*
+pyagent/*
+scc-sdk/*
