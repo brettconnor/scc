@@ -47,10 +47,8 @@ ENV/
 .env.local
 *.log
 
-# Sub repositories
-# codeguard/*
-# pyagent/*
-# scc-sdk/*
 
 .github/agents/vscode-copilot.agent.md
 .github/agents/ghe-expert.agent.md
+
+hosts.sh
