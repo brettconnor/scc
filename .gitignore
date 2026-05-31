@@ -51,5 +51,6 @@ ENV/
 # codeguard/*
 # pyagent/*
 # scc-sdk/*
+
 .github/agents/vscode-copilot.agent.md
 .github/agents/ghe-expert.agent.md
