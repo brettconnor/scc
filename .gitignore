@@ -51,3 +51,7 @@ ENV/
 codeguard/*
 pyagent/*
 scc-sdk/*
+
+codeguard*
+pyagent*
+scc-sdk*
