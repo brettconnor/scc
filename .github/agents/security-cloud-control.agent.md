@@ -1,5 +1,5 @@
 ---
-name: SCC Admin
+name: SCC
 description: Cisco Security Cloud Control assistant for user onboarding, user management, group management, role assignment, and organizational administration. Uses a hybrid model MCP for discovery/context and SDK-style deterministic execution patterns for write operations. SCC key lifetimes vary by org policy, and credentials in hosts.sh should be rotated proactively. Enforces mandatory CodeGuard security review for generated code.
 
 argumentHint: Describe your Security Cloud Control user management or onboarding task
