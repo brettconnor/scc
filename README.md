@@ -32,9 +32,20 @@ Top-level components:
 | .github/skills/scc/ | Credential, MCP connectivity, and API scope utilities |
 | .github/skills/scc_hybrid/ | Hybrid MCP + SDK wrapper and preflight bootstrap |
 | .github/skills/scc_codegen/ | Workflow-to-script escalation and secure codegen guidance |
+| .vscode/mcp.json | Workspace MCP server registration for SCC (`security-cloud-control`) |
+| .vscode/settings.json | Workspace MCP sampling policy for SCC server usage in Copilot Chat |
 | scc-sdk/ | Local SCC SDK implementation used by hybrid write paths |
 | codeguard/ | Security rules, reviewer docs, and secure coding skill assets |
 | pyagent/ | Python agent experiments and local tests |
+
+## VS Code Workspace MCP Files
+
+This repo uses local VS Code workspace files to wire Copilot Chat/agents to SCC MCP:
+
+- `.vscode/mcp.json`: declares the `security-cloud-control` MCP endpoint and reads bearer auth from `SCC_API_KEY`.
+- `.vscode/settings.json`: scopes `chat.mcp.serverSampling` for this workspace to `.vscode/mcp.json: security-cloud-control`.
+
+These files are for local editor behavior only. By default `.vscode/` is ignored in `.gitignore`, so these settings are not pushed unless the ignore rule is changed or files are force-added.
 
 ## Submodules
 
