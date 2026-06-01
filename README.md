@@ -16,10 +16,6 @@ The workspace combines:
 
 Use this repo when you need to:
 - run and iterate on the SCC Admin agent inside a VS Code Copilot workspace
-- onboard/offboard SCC users
-- create and manage groups
-- assign or revoke roles
-- run org-scoped audits and access reviews
 - build repeatable SCC workflow scripts
 
 ## Repository Layout
