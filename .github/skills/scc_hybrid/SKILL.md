@@ -1,3 +1,14 @@
+---
+description: "Hybrid MCP discovery + deterministic SDK write wrapper for SCC Admin workflows"
+hints:
+  - "Use when executing SCC write operations (invite, create, assign) that require both discovery context and mutation"
+  - "Provides pre-scoped write wrappers for users, groups, and roles — no need to pass org_id explicitly"
+  - "Intent routing automatically classifies operations as WRITE (sdk) or DISCOVER (mcp) to coordinate MCP + SDK execution"
+  - "Session cache prevents redundant API calls for name→UUID lookups within one workflow cycle"
+  - "Error recovery enforces MCP verify → compensate → operator guidance precedence"
+  - "Startup gates verify credentials, MCP connectivity, API scope, and org binding before any operation"
+---
+
 # SCC Hybrid Skill
 
 Provides a thin Python wrapper over the read-only `scc-sdk` sub-repo, combining MCP discovery with deterministic SDK writes in one context manager for use by the SCC Admin agent.
@@ -14,6 +25,7 @@ Provides a thin Python wrapper over the read-only `scc-sdk` sub-repo, combining 
 | File | Purpose |
 |------|---------|
 | `scc_hybrid_context.py` | Thin wrapper context manager — delegates to `scc-sdk/scc_sdk/resources` |
+| `bootstrap.sh` | One-command preflight: dependency install, hosts.sh export, and smoke test |
 
 ## Architecture
 
@@ -33,12 +45,78 @@ SCC Admin Agent
 
 ## Quick Start
 
+### One-command bootstrap (recommended)
+
+```bash
+bash .github/skills/scc_hybrid/bootstrap.sh
+```
+
+This command:
+- installs `scc-sdk` Python requirements when missing
+- falls back to `https://pypi.org/simple` if your default index cannot resolve packages
+- exports variables from `hosts.sh` for child processes
+- runs the safe hybrid smoke test
+
+### 0) Bootstrap Python dependencies (required)
+
+The hybrid context imports `scc-sdk`, which requires Python packages from `scc-sdk/requirements.txt`.
+
+```bash
+python3 -m pip install -r scc-sdk/requirements.txt
+```
+
+If your environment is pinned to an internal index that does not mirror `requests`, use a one-off fallback:
+
+```bash
+PIP_INDEX_URL=https://pypi.org/simple python3 -m pip install -r scc-sdk/requirements.txt
+```
+
+### 1) Export credentials to Python process (CRITICAL)
+
+**⚠️ IMPORTANT**: Environment variables must be sourced BEFORE invoking Python. Do not rely on `source hosts.sh` alone inside the Python script; the hybrid context gates read from the parent shell environment.
+
+#### Standard Pattern (Option 1 — Recommended)
+
+```bash
+set -a; source hosts.sh; set +a && python3 << 'EOF'
+# Your Python code here
+EOF
+```
+
+This pattern:
+- ✓ Exports `hosts.sh` vars to the shell
+- ✓ Chains to Python execution with `&&`
+- ✓ Passes vars to child Python process
+- ✓ Works in one-liners and shell scripts
+- ✓ **Prevents `Missing environment variables` errors**
+
+#### Example: List active users (Option 1)
+
+```bash
+set -a; source hosts.sh; set +a && python3 << 'EOF'
+import sys
+sys.path.insert(0, ".github/skills/scc_hybrid")
+from scc_hybrid_context import SCCHybridContext
+
+with SCCHybridContext() as ctx:
+    users_response = ctx.users.list(ctx.org_id)
+    users = users_response.get('users', [])
+    active_users = [u for u in users if u.get('status') == 'ACTIVE']
+    
+    for user in active_users:
+        print(f"{user['email']:<35} {user['fullName']:<25} {user['status']:<10}")
+    
+    print(f"\nTotal active: {len(active_users)} / {len(users)}")
+EOF
+```
+
+### 2) Use the context manager
+
 ```python
 import sys, os
 sys.path.insert(0, ".github/skills/scc_hybrid")
 from scc_hybrid_context import SCCHybridContext, OperationIntent
 
-# source hosts.sh first, then:
 with SCCHybridContext() as ctx:
     # Read path — delegate to MCP tools in the agent, or call SDK directly:
     users = ctx.users.list(ctx.org_id)
@@ -54,6 +132,14 @@ with SCCHybridContext() as ctx:
     role_id = ctx.find_role_id("Organization Administrator")
     ctx.assign_role_to_user(role_id, user_id)
 ```
+
+### Reusable Workflow Scripts
+
+Reusable workflow templates are owned by the `scc_codegen` skill.
+
+- Canonical template: `.github/skills/scc_codegen/script_template.sh`
+- Use `scc_hybrid` for runtime context and deterministic wrappers
+- Use `scc_codegen` when generating or maintaining reusable workflow scripts
 
 ## Startup Gates
 
@@ -137,17 +223,27 @@ SDK exception → guidance mapping:
 
 ## Session Cache
 
-The context manager caches name→UUID lookups in memory for the session:
+Cache lifetime = one workflow cycle (one `with` block).
+
+The context manager automatically caches name→UUID lookups:
+- Write wrappers populate cache after success
+- `find_role_id()` caches role lookups  
+- Cache is cleared when context exits (fresh start for next workflow)
 
 ```python
-ctx.get_cached("roles", "Organization Administrator")  # → role UUID or None
-ctx.set_cache("users", "alice@example.com", user_id)
-ctx.clear_cache("groups")   # clear one type
-ctx.clear_cache()           # clear all
+with SCCHybridContext() as ctx:
+    role_id = ctx.find_role_id("Organization Administrator")  # API call → cached
+    ctx.assign_role_to_user(role_id, user_1)                  # uses cached role_id ✓
+    ctx.assign_role_to_user(role_id, user_2)                  # uses cached role_id ✓
+    # No redundant API calls
 ```
 
-Cache is automatically populated by write wrappers and `find_role_id()`.  
-After SDK failures, the cache for the affected resource type should be cleared and re-populated via MCP.
+**Manual control (optional):**
+```python
+ctx.get_cached("roles", "Organization Administrator")  # peek at cache
+ctx.clear_cache("roles")                               # force fresh reads
+ctx.clear_cache()                                      # clear all
+```
 
 ## Credential Requirements
 
@@ -155,15 +251,31 @@ All sourced from `hosts.sh` at the repo root:
 
 | Variable | Purpose |
 |----------|---------|
-| `SCC_API_KEY` | Bearer token (~7 day expiry) |
+| `SCC_API_KEY` | Bearer token (18 hour expiry) |
 | `SCC_ORG_ID` | Organization display name |
+| `SCC_ORG_UUID` | Organization UUID |
 | `SCC_API_KEY_ID` | API key UUID |
 | `SCC_URL` | Base REST API URL |
 
-Token expiry: manual rotation required via SCC UI (Settings → API Keys). Refresh endpoint is non-functional for this org.
+Token expiry: manual rotation required via SCC UI (Settings → API Keys). Token refresh endpoint is currently non-functional for this organization.
+
+## Installation and Index Troubleshooting
+
+- Symptom: `Missing environment variables: SCC_API_KEY ...`
+- Cause: Environment variables are not exported to the Python process
+- Fix: Use the standard pattern: `set -a; source hosts.sh; set +a && python3 script.py`
+- Why: `source hosts.sh` alone runs in a subshell and doesn't affect Python's environment. The hybrid context gates check process environment variables at startup.
+
+- Symptom: `ModuleNotFoundError: No module named 'requests'`
+- Cause: `scc-sdk` dependencies are not installed in the active Python environment
+- Fix: `python3 -m pip install -r scc-sdk/requirements.txt`
+
+- Symptom: `No matching distribution found for requests>=2.25.0`
+- Cause: active pip index does not mirror required packages
+- Fix: use `PIP_INDEX_URL=https://pypi.org/simple` for bootstrap or update internal mirror config
 
 ## Related
 
-- Agent: [.github/agents/security-cloud-control.agent.md](../../agents/security-cloud-control.agent.md)
-- SCC utilities skill: [.github/skills/scc/SKILL.md](../scc/SKILL.md)
-- SDK source (read-only): [scc-sdk/scc_sdk/resources/](../../../scc-sdk/scc_sdk/resources/)
+- Agent: [.github/agents/security-cloud-control.agent.md]
+- SCC utilities skill: [.github/skills/scc/SKILL.md]
+- SDK source (read-only): [scc-sdk/scc_sdk/resources/]

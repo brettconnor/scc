@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Example host configuration for local development.
+# Safe to commit. Do not put real credentials in this file.
+#
+# Usage:
+# 1) cp hosts.sh.example hosts.sh
+# 2) Edit hosts.sh with your real values
+# 3) Export vars into your shell and child processes:
+#    set -a; source hosts.sh; set +a
+
+# Cisco Secure Cloud Control configuration
+SCC_ENABLED=true
+SCC_USERNAME="your.email@example.com"
+SCC_URL="https://api.security.cisco.com/v1/"
+SCC_REGIONAL_URL="https://api.us.security.cisco.com/v1/"
+
+# API key metadata
+SCC_API_KEY_ID="00000000-0000-0000-0000-000000000000"
+
+# Access token (JWT)
+SCC_API_KEY="REPLACE_WITH_ACCESS_TOKEN"
+
+# Refresh token
+SCC_REFRESH_KEY="REPLACE_WITH_REFRESH_TOKEN"
+
+# Organization details
+SCC_ORG_ID="Your Org Display Name"
+SCC_ORG_UUID="00000000-0000-0000-0000-000000000000"

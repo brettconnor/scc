@@ -24,6 +24,7 @@ import sys
 import subprocess
 from enum import Enum
 from typing import Dict, Any, Optional
+from urllib.parse import urlparse
 
 # ---------------------------------------------------------------------------
 # Inject scc-sdk into path without modifying the sub-repo.
@@ -93,6 +94,7 @@ class SCCHybridContext:
         self._api_key_id    = os.environ.get("SCC_API_KEY_ID", "")
         self.org_name       = os.environ.get("SCC_ORG_ID", "")
         self.org_id: Optional[str] = os.environ.get("SCC_ORG_UUID")
+        self._write_approved = self._is_true_env("SCC_WRITE_APPROVED")
 
         self._client: Optional[Client] = None
 
@@ -136,9 +138,10 @@ class SCCHybridContext:
         self._gate_credentials()
         # Token refresh disabled (SCC side broken) — use SCC_API_KEY directly.
         sdk_token = self._sdk_token_override or os.environ.get("SCC_API_KEY", "")
+        base_url = self._normalize_base_url(os.environ.get("SCC_URL", ""))
         self._client = Client(
             access_token=sdk_token,
-            base_url="https://api.security.cisco.com",
+            base_url=base_url,
             base_path="v1",
         )
         self._gate_mcp_connectivity()
@@ -181,8 +184,17 @@ class SCCHybridContext:
     # Thin write wrappers (operator confirmation must happen before calling)
     # ------------------------------------------------------------------ #
 
+    def approve_writes(self) -> None:
+        """Enable write operations for this context after operator confirmation."""
+        self._write_approved = True
+
+    def revoke_write_approval(self) -> None:
+        """Disable write operations for this context."""
+        self._write_approved = False
+
     def invite_user(self, email: str, first_name: str, last_name: str) -> Dict[str, Any]:
         """Invite user into $SCC_ORG_ID."""
+        self._require_write_approval("invite_user")
         result = self._client.users.invite(
             org_id=self.org_id,
             email=email,
@@ -194,20 +206,24 @@ class SCCHybridContext:
 
     def disable_user(self, email: str) -> Dict[str, Any]:
         """Disable user account."""
+        self._require_write_approval("disable_user")
         return self._client.users.disable(org_id=self.org_id, email=email)
 
     def enable_user(self, email: str) -> Dict[str, Any]:
         """Enable user account."""
+        self._require_write_approval("enable_user")
         return self._client.users.enable(org_id=self.org_id, email=email)
 
     def remove_user(self, email: str) -> Dict[str, Any]:
         """Remove user from org."""
+        self._require_write_approval("remove_user")
         return self._client.users.remove(org_id=self.org_id, email=email)
 
     def update_user(self, user_id: str,
                     first_name: Optional[str] = None,
                     last_name: Optional[str] = None) -> Dict[str, Any]:
         """Update user name fields."""
+        self._require_write_approval("update_user")
         return self._client.users.update(
             org_id=self.org_id, user_id=user_id,
             first_name=first_name, last_name=last_name,
@@ -218,6 +234,7 @@ class SCCHybridContext:
         Create admin group.
         CRITICAL: appliesTo is intentionally omitted — passing it causes API failures.
         """
+        self._require_write_approval("create_group")
         result = self._client.groups.create(
             org_id=self.org_id,
             name=name,
@@ -229,10 +246,12 @@ class SCCHybridContext:
 
     def delete_group(self, group_id: str) -> bool:
         """Delete admin group by UUID."""
+        self._require_write_approval("delete_group")
         return self._client.groups.delete(org_id=self.org_id, group_id=group_id)
 
     def add_user_to_group(self, group_id: str, user_email: str) -> Dict[str, Any]:
         """Add user to admin group."""
+        self._require_write_approval("add_user_to_group")
         return self._client.groups.patch(
             org_id=self.org_id, group_id=group_id,
             users=[{"operation": "add", "id": user_email}],
@@ -240,6 +259,7 @@ class SCCHybridContext:
 
     def remove_user_from_group(self, group_id: str, user_email: str) -> Dict[str, Any]:
         """Remove user from admin group."""
+        self._require_write_approval("remove_user_from_group")
         return self._client.groups.patch(
             org_id=self.org_id, group_id=group_id,
             users=[{"operation": "remove", "id": user_email}],
@@ -247,6 +267,7 @@ class SCCHybridContext:
 
     def assign_role_to_user(self, role_id: str, user_id: str) -> Dict[str, Any]:
         """Assign role to a user."""
+        self._require_write_approval("assign_role_to_user")
         return self._client.roles.patch(
             org_id=self.org_id, role_id=role_id,
             users=[{"operation": "add", "id": user_id}],
@@ -254,6 +275,7 @@ class SCCHybridContext:
 
     def assign_role_to_group(self, role_id: str, group_id: str) -> Dict[str, Any]:
         """Assign role to an admin group."""
+        self._require_write_approval("assign_role_to_group")
         return self._client.roles.patch(
             org_id=self.org_id, role_id=role_id,
             groups=[{"operation": "add", "id": group_id}],
@@ -386,7 +408,9 @@ class SCCHybridContext:
         if missing:
             raise RuntimeError(
                 f"Missing environment variables: {', '.join(missing)}\n"
-                "Remediation: source hosts.sh"
+                "Remediation: export vars with 'set -a; source hosts.sh; set +a'. "
+                "If imports fail first, install dependencies with "
+                "'python3 -m pip install -r scc-sdk/requirements.txt'."
             )
         if not self.org_id:
             self.org_id = os.environ.get("SCC_ORG_UUID", "")
@@ -399,8 +423,8 @@ class SCCHybridContext:
         )
         if r.returncode != 0 or "RESULT: PASS" not in r.stdout:
             raise RuntimeError(
-                f"MCP gate failed.\n{r.stdout}\n{r.stderr}\n"
-                "Remediation: Check MCP server at mcp.security.cisco.com"
+                "MCP gate failed. "
+                "Remediation: run .github/skills/scc/check_mcp.sh for diagnostics."
             )
         self.gates_passed["mcp"] = True
 
@@ -409,10 +433,35 @@ class SCCHybridContext:
         r = subprocess.run(
             ["bash", script], capture_output=True, text=True, timeout=30, cwd=_REPO_ROOT
         )
-        if r.returncode != 0 or "✓" not in r.stdout:
-            msg = "API token expired." if "EXPIRED" in r.stdout else f"{r.stdout}\n{r.stderr}"
-            raise RuntimeError(f"API scope gate failed: {msg}\nRemediation: Rotate SCC_API_KEY in hosts.sh.")
+        has_org_read_access = "REST API read access: ✓ YES" in r.stdout
+        if r.returncode != 0 or not has_org_read_access:
+            msg = "API token expired." if "EXPIRED" in r.stdout else "Required API scope check failed."
+            raise RuntimeError(
+                f"API scope gate failed: {msg} "
+                "Remediation: run .github/skills/scc/check-api-scopes.sh and rotate SCC_API_KEY in hosts.sh if needed."
+            )
         self.gates_passed["api_scope"] = True
+
+    def _require_write_approval(self, operation: str) -> None:
+        if not self._write_approved:
+            raise RuntimeError(
+                f"Write operation blocked: {operation}. "
+                "Call approve_writes() after explicit operator confirmation, "
+                "or set SCC_WRITE_APPROVED=true for approved automation."
+            )
+
+    @staticmethod
+    def _is_true_env(name: str) -> bool:
+        return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+    @staticmethod
+    def _normalize_base_url(raw_url: str) -> str:
+        parsed = urlparse(raw_url.strip())
+        if parsed.scheme != "https" or not parsed.netloc:
+            raise RuntimeError(
+                "Invalid SCC_URL. Expected an https URL, for example https://api.security.cisco.com/v1/."
+            )
+        return f"{parsed.scheme}://{parsed.netloc}"
 
     def _gate_org_binding(self) -> None:
         """Resolve org display name → UUID using SDK directly (no shell script)."""

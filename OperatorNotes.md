@@ -1,3 +1,4 @@
-/Users/brettcon/git/scc/pyagent is it's own sub GitHub repo and I don't want to (maybe can't) change. More a PoC and inspiration for my /Users/brettcon/git/scc/.github/agents/security-cloud-control.agent.md. Same for /Users/brettcon/git/scc/scc-sdk. I cannot change, only hook in or build thin wrapper scripts that make calls to /Users/brettcon/git/scc/scc-sdk/scc_sdk/resources. 
 
-rather than write new code can we create a new skill /Users/brettcon/git/scc/.github/skills/scc_hybrid/, with a /Users/brettcon/git/scc/.github/skills/scc_hybrid/SKILL.md and a /Users/brettcon/git/scc/.github/skills/scc_hybrid/scc_hybrid_context.py that is just thin wrapper calls to /Users/brettcon/git/scc/scc-sdk/scc_sdk/resources ?
+
+
+the #file:security-cloud-control.agent.md has been updated to assist in developing code to manage SCC. update the agent def.
