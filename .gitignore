@@ -47,8 +47,4 @@ ENV/
 .env.local
 *.log
 
-
-.github/agents/vscode-copilot.agent.md
-.github/agents/ghe-expert.agent.md
-
 hosts.sh
