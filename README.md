@@ -166,4 +166,3 @@ bash .github/skills/scc/get_scc_org.sh
 - SCC skill docs: `.github/skills/scc/SKILL.md`
 - Hybrid skill docs: `.github/skills/scc_hybrid/SKILL.md`
 - Script/codegen docs: `.github/skills/scc_codegen/SKILL.md`
-- Operator notes: `OperatorNotes.md`
