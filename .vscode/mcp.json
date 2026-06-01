@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "security-cloud-control": {
+      "type": "http",
+      "url": "https://mcp.security.cisco.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:SCC_API_KEY}"
+      }
+    }
+  }
+}

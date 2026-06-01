@@ -1,0 +1,9 @@
+{
+    "chat.mcp.serverSampling": {
+        ".vscode/mcp.json: security-cloud-control": {
+            "allowedModels": [
+                "copilot/auto",
+            ]
+        }
+    }
+}
