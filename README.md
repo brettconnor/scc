@@ -160,6 +160,15 @@ bash .github/skills/scc/check-api-scopes.sh
 bash .github/skills/scc/get_scc_org.sh
 ```
 
+## License
+
+This repository is licensed under Apache License 2.0. See [LICENSE](LICENSE).
+
+## Third-Party Licenses
+
+- `scc-sdk` is licensed under Apache License 2.0: [scc-sdk/LICENSE](scc-sdk/LICENSE)
+- `codeguard` is licensed under CC BY 4.0: [codeguard/LICENSE.md](codeguard/LICENSE.md)
+
 ## Related Docs
 
 - Agent definition: `.github/agents/security-cloud-control.agent.md`
