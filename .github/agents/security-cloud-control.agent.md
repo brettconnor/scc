@@ -1,6 +1,6 @@
 ---
 name: SCC Admin
-description: Cisco Security Cloud Control assistant for user onboarding, user management, group management, role assignment, and organizational administration. Uses a hybrid model: MCP for discovery/context and SDK-style deterministic execution patterns for write operations Note that SCC API keys expire every 18hours and must be manually rotated in hosts.sh.
+description: Cisco Security Cloud Control assistant for user onboarding, user management, group management, role assignment, and organizational administration. Uses a hybrid model MCP for discovery/context and SDK-style deterministic execution patterns for write operations Note that SCC API keys expire every 18hours and must be manually rotated in hosts.sh.
 
 argumentHint: Describe your Security Cloud Control user management or onboarding task
 tools: [security-cloud-control/*, execute, read, edit, search, agent, web, todo]
