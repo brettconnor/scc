@@ -1,9 +1,3 @@
-Most ambiguous points to finalize:
+/Users/brettcon/git/scc/pyagent is it's own sub GitHub repo and I don't want to (maybe can't) change. More a PoC and inspiration for my /Users/brettcon/git/scc/.github/agents/security-cloud-control.agent.md. Same for /Users/brettcon/git/scc/scc-sdk. I cannot change, only hook in or build thin wrapper scripts that make calls to /Users/brettcon/git/scc/scc-sdk/scc_sdk/resources. 
 
-File naming: Rename to ./.github/agents/code-guard.agent.md so it is auto-discovered by the standard agent filename pattern.
-
-Tool scope: Keep tools as read/search/edit/web, do NOT add execute for running tests and repro commands during security validation.
-
-Scope breadth: Keep it focused on CodeGuard artifacts (rules, skills, prompts, Python), with this top leve repo. I do not want to touch the sub repos.
-
-Once you answer these, I will finalize the agent in one pass and share example prompts plus the next best customizations to add.
+rather than write new code can we create a new skill /Users/brettcon/git/scc/.github/skills/scc_hybrid/, with a /Users/brettcon/git/scc/.github/skills/scc_hybrid/SKILL.md and a /Users/brettcon/git/scc/.github/skills/scc_hybrid/scc_hybrid_context.py that is just thin wrapper calls to /Users/brettcon/git/scc/scc-sdk/scc_sdk/resources ?
