@@ -149,7 +149,7 @@ The context manager enforces 4 gates on `__enter__`:
 |---|------|-----------------|-------------------|
 | 1 | Credentials | env var check | All operations |
 | 2 | MCP connectivity | `check_mcp.sh` → `RESULT: PASS` | All operations |
-| 3 | API scope | `check-api-scopes.sh` → ✓ /organizations | All operations |
+| 3 | API scope | `check_api_scopes.sh` → ✓ /organizations | All operations |
 | 4 | Org binding | `SDK organizations.list()` → match `$SCC_ORG_ID` | All operations |
 
 ## SDK Resource Pass-Throughs

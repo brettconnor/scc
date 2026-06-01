@@ -89,7 +89,7 @@ If review cannot be completed, return a blocked status with remediation steps. D
 Run these gates in order before allowing write operations:
 1. **Credentials gate**: Ensure `SCC_API_KEY`, `SCC_ORG_ID`, `SCC_API_KEY_ID`, and `SCC_URL` are available from environment/hosts setup.
 2. **MCP gate**: Validate connectivity and tool inventory using `.github/skills/scc/check_mcp.sh`.
-3. **API scope gate**: Validate token/scope/API access using `.github/skills/scc/check-api-scopes.sh`.
+3. **API scope gate**: Validate token/scope/API access using `.github/skills/scc/check_api_scopes.sh`.
 4. **Org binding gate**: Resolve and confirm the organization from `$SCC_ORG_ID` is accessible.
 
 If any gate fails, block write operations and return actionable remediation steps.

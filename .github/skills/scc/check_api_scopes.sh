@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# check-api-scopes.sh — Diagnostic script to inspect API key scopes and permissions
-# Usage: bash .github/skills/scc/check-api-scopes.sh
+# check_api_scopes.sh — Diagnostic script to inspect API key scopes and permissions
+# Usage: bash .github/skills/scc/check_api_scopes.sh
 # Requires: curl, python3 (stdlib only)
 set -euo pipefail
 

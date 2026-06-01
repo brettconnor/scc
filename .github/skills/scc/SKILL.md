@@ -32,12 +32,12 @@ All scripts require only `curl` and `python3` (stdlib) — no venv or pip instal
    - Returns org UUID, name, region, and type as JSON
    - Usage: `bash .github/skills/scc/get_scc_org.sh`
 
-3. **check-api-scopes.sh** - API key scope and permission analyzer
+3. **check_api_scopes.sh** - API key scope and permission analyzer
    - Decodes JWT token and displays claims (org ID, user type, etc.)
    - Tests connectivity to REST API, MCP, and objects endpoints
    - Shows which capabilities are available with current key
    - Reports missing scopes for restricted endpoints
-   - Usage: `bash .github/skills/scc/check-api-scopes.sh`
+   - Usage: `bash .github/skills/scc/check_api_scopes.sh`
 
 4. **scc.py** - Interactive MCP REPL (Python 3.9+ stdlib only)
    - Connects to SCC MCP server and lists available tools
@@ -83,7 +83,7 @@ bash .github/skills/scc/get_scc_org.sh
 ### Check API key scopes and endpoint access
 
 ```bash
-bash .github/skills/scc/check-api-scopes.sh
+bash .github/skills/scc/check_api_scopes.sh
 ```
 
 Shows JWT claims, which endpoints are accessible, and what scopes are needed for restricted endpoints.
@@ -91,7 +91,7 @@ Shows JWT claims, which endpoints are accessible, and what scopes are needed for
 ## Architecture
 
 ```
-check_mcp.sh / get_scc_org.sh / check-api-scopes.sh
+check_mcp.sh / get_scc_org.sh / check_api_scopes.sh
     └── curl → SCC REST API / MCP Server → Security Cloud Control
 ```
 
@@ -132,7 +132,7 @@ SCC key lifetimes vary by org policy and key type. If token refresh is unavailab
 | Test MCP connectivity | `bash check_mcp.sh` |
 | Discover available tools | `bash check_mcp.sh` |
 | Get org UUID | `bash get_scc_org.sh` |
-| Decode JWT / check scopes | `bash check-api-scopes.sh` |
+| Decode JWT / check scopes | `bash check_api_scopes.sh` |
 | Expired token | Manual rotation — see Token Lifecycle above |
 
 ## Integration with VS Code Agent

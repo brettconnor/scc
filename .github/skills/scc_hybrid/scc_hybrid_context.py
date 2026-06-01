@@ -75,7 +75,7 @@ class SCCHybridContext:
     Startup gates (enforced in __enter__):
       1. Credentials  — SCC_API_KEY, SCC_ORG_ID, SCC_API_KEY_ID, SCC_URL present
       2. MCP          — .github/skills/scc/check_mcp.sh returns RESULT: PASS
-      3. API scope    — .github/skills/scc/check-api-scopes.sh shows ✓ /organizations
+      3. API scope    — .github/skills/scc/check_api_scopes.sh shows ✓ /organizations
       4. Org binding  — $SCC_ORG_ID display name resolved to UUID via SDK
 
     Session cache:  orgs · roles · users · groups  (name/email → UUID)
@@ -429,7 +429,7 @@ class SCCHybridContext:
         self.gates_passed["mcp"] = True
 
     def _gate_api_scope(self) -> None:
-        script = os.path.join(_REPO_ROOT, ".github", "skills", "scc", "check-api-scopes.sh")
+        script = os.path.join(_REPO_ROOT, ".github", "skills", "scc", "check_api_scopes.sh")
         r = subprocess.run(
             ["bash", script], capture_output=True, text=True, timeout=30, cwd=_REPO_ROOT
         )
@@ -438,7 +438,7 @@ class SCCHybridContext:
             msg = "API token expired." if "EXPIRED" in r.stdout else "Required API scope check failed."
             raise RuntimeError(
                 f"API scope gate failed: {msg} "
-                "Remediation: run .github/skills/scc/check-api-scopes.sh and rotate SCC_API_KEY in hosts.sh if needed."
+                "Remediation: run .github/skills/scc/check_api_scopes.sh and rotate SCC_API_KEY in hosts.sh if needed."
             )
         self.gates_passed["api_scope"] = True
 

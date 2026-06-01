@@ -88,7 +88,7 @@ This performs dependency checks, loads hosts.sh, validates readiness, and runs a
 
 ```bash
 bash .github/skills/scc/check_mcp.sh
-bash .github/skills/scc/check-api-scopes.sh
+bash .github/skills/scc/check_api_scopes.sh
 bash .github/skills/scc/get_scc_org.sh
 ```
 
@@ -166,7 +166,7 @@ bash .github/skills/scc_hybrid/bootstrap.sh
 bash .github/skills/scc/check_mcp.sh
 
 # Inspect API scopes and endpoint access
-bash .github/skills/scc/check-api-scopes.sh
+bash .github/skills/scc/check_api_scopes.sh
 
 # List accessible organizations
 bash .github/skills/scc/get_scc_org.sh
