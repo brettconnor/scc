@@ -8,7 +8,7 @@
 # 3) Export vars into your shell and child processes:
 #    set -a; source hosts.sh; set +a
 
-# Cisco Secure Cloud Control configuration
+# Cisco Security Cloud Control configuration
 SCC_ENABLED=true
 SCC_USERNAME="your.email@example.com"
 SCC_URL="https://api.security.cisco.com/v1/"

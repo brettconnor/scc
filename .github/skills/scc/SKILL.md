@@ -49,14 +49,14 @@ All scripts require only `curl` and `python3` (stdlib) — no venv or pip instal
 
 No installation required. All scripts source `hosts.sh` automatically.
 
-**Token Management**: Access tokens expire ~7 days after generation. When expired, generate a new API key in the SCC UI (Settings → API Keys), then update `SCC_API_KEY`, `SCC_REFRESH_KEY`, and `SCC_API_KEY_ID` in `hosts.sh`.
+**Token Management**: Token lifetimes vary by org policy and key type. When authentication fails or a key nears expiry, generate a new API key in the SCC UI (Settings → API Keys), then update `SCC_API_KEY`, `SCC_REFRESH_KEY`, and `SCC_API_KEY_ID` in `hosts.sh`.
 
 ### Configuration
 
 Credentials are sourced automatically from `hosts.sh` at the repo root:
 
 ```
-SCC_API_KEY       — Bearer token for API authentication (~7 day expiry)
+SCC_API_KEY       — Bearer token for API authentication
 SCC_ORG_ID        — Organization display name (e.g. "Cisco STO GCT DP")
 SCC_API_KEY_ID    — API key UUID
 SCC_REFRESH_KEY   — Refresh token (stored but not used — SCC refresh endpoint is non-functional)
@@ -109,7 +109,7 @@ All bash scripts:
 
 ## Token Lifecycle
 
-SCC API keys expire ~7 days after generation. The SCC refresh token endpoint is non-functional for this org — **manual key rotation is required**.
+SCC key lifetimes vary by org policy and key type. If token refresh is unavailable or fails for your org, use **manual key rotation**.
 
 ### When Your Token Expires
 1. Visit https://security.cisco.com → **Settings → API Keys**
@@ -137,7 +137,7 @@ SCC API keys expire ~7 days after generation. The SCC refresh token endpoint is 
 
 ## Integration with VS Code Agent
 
-This skill complements the [security-cloud-control VS Code agent](.github/agents/security-cloud-control.agent.md):
+This skill complements the [security-cloud-control VS Code agent](../../agents/security-cloud-control.agent.md):
 
 | Use Case | VS Code Agent | This Utility |
 |----------|---------------|--------------|
@@ -153,7 +153,7 @@ This skill complements the [security-cloud-control VS Code agent](.github/agents
 
 **Symptom**: `scc.py` displays "SCC API Token EXPIRED" error
 
-**Cause**: Both access token and refresh token have expired (> 7 days since last refresh)
+**Cause**: Access and refresh tokens are both expired, revoked, or no longer valid
 
 **Solutions**:
 1. Visit: https://security.cisco.com
@@ -213,7 +213,7 @@ This skill complements the [security-cloud-control VS Code agent](.github/agents
 
 ## Related Files
 
-- VS Code Agent: [.github/agents/security-cloud-control.agent.md](../../agents/security-cloud-control.agent.md)
+- VS Code Agent: [../../agents/security-cloud-control.agent.md](../../agents/security-cloud-control.agent.md)
 - VS Code MCP config: [.vscode/mcp.json](../../../.vscode/mcp.json)
 - Agent Registry: [AGENTS.md](../../../AGENTS.md)
 
@@ -221,7 +221,7 @@ This skill complements the [security-cloud-control VS Code agent](.github/agents
 
 For issues with:
 - **MCP connectivity**: Run `bash check_mcp.sh` — it will report `PASS`/`FAIL` with details
-- **Token expiration**: Run `python3 .github/skills/scc/scc.py` — auto-refresh will handle if < 7 days old
-- **Expired tokens (> 7 days)**: Follow "Token Expired" troubleshooting steps above
+- **Token expiration**: Run `python3 .github/skills/scc/scc.py` to validate status and attempt refresh if supported
+- **Refresh unavailable/invalid**: Follow "Token Expired" troubleshooting steps above
 - **Credentials**: Validate `hosts.sh` has `SCC_API_KEY`, `SCC_API_KEY_ID`, `SCC_REFRESH_KEY`, `SCC_URL`
 - **Architecture**: Review [SCC documentation](https://www.cisco.com/site/us/en/products/networking/cloud-networking-services/security/security-cloud-control/index.html)

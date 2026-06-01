@@ -251,20 +251,20 @@ All sourced from `hosts.sh` at the repo root:
 
 | Variable | Purpose |
 |----------|---------|
-| `SCC_API_KEY` | Bearer token (18 hour expiry) |
+| `SCC_API_KEY` | Bearer token for API authentication |
 | `SCC_ORG_ID` | Organization display name |
 | `SCC_ORG_UUID` | Organization UUID |
 | `SCC_API_KEY_ID` | API key UUID |
 | `SCC_URL` | Base REST API URL |
 
-Token expiry: manual rotation required via SCC UI (Settings → API Keys). Token refresh endpoint is currently non-functional for this organization.
+Token lifetimes vary by org policy and key type. If refresh is unavailable or fails in your org, rotate keys manually via SCC UI (Settings → API Keys).
 
 ## Installation and Index Troubleshooting
 
 - Symptom: `Missing environment variables: SCC_API_KEY ...`
 - Cause: Environment variables are not exported to the Python process
 - Fix: Use the standard pattern: `set -a; source hosts.sh; set +a && python3 script.py`
-- Why: `source hosts.sh` alone runs in a subshell and doesn't affect Python's environment. The hybrid context gates check process environment variables at startup.
+- Why: `source hosts.sh` sets shell variables, but child processes only inherit exported variables. The hybrid context gates check process environment variables at startup.
 
 - Symptom: `ModuleNotFoundError: No module named 'requests'`
 - Cause: `scc-sdk` dependencies are not installed in the active Python environment
@@ -276,6 +276,6 @@ Token expiry: manual rotation required via SCC UI (Settings → API Keys). Token
 
 ## Related
 
-- Agent: [.github/agents/security-cloud-control.agent.md]
-- SCC utilities skill: [.github/skills/scc/SKILL.md]
-- SDK source (read-only): [scc-sdk/scc_sdk/resources/]
+- Agent: [../../agents/security-cloud-control.agent.md](../../agents/security-cloud-control.agent.md)
+- SCC utilities skill: [../scc/SKILL.md](../scc/SKILL.md)
+- SDK source (read-only): [../../../scc-sdk/scc_sdk/resources](../../../scc-sdk/scc_sdk/resources)

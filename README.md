@@ -30,7 +30,22 @@ Top-level components:
 | `scc-sdk/` | Local SCC SDK implementation used by hybrid write paths |
 | `codeguard/` | Security rules, reviewer docs, and secure coding skill assets |
 | `pyagent/` | Python agent experiments and local tests |
-| `src/` | Conversion and tooling utilities for agent/skill format targets |
+
+## Submodules
+
+This repo uses git submodules for `codeguard`, `scc-sdk`, and `pyagent`.
+
+After cloning, initialize and update submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+To refresh submodules to their configured branches:
+
+```bash
+git submodule update --remote --recursive
+```
 
 ## Quick Start
 
@@ -122,7 +137,9 @@ Write operations should not run until readiness gates pass and explicit approval
 
 ## Token Lifecycle Notes
 
-SCC API tokens expire and must be rotated through the SCC UI. If authentication fails:
+SCC API token lifetimes can vary by org policy and key type. Rotate keys through the SCC UI when authentication fails or when keys near expiry.
+
+If authentication fails:
 - generate a new API key in SCC
 - update `SCC_API_KEY`, `SCC_REFRESH_KEY`, and `SCC_API_KEY_ID` in `hosts.sh`
 - rerun connectivity checks
