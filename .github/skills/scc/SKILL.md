@@ -39,7 +39,13 @@ All scripts require only `curl` and `python3` (stdlib) — no venv or pip instal
    - Reports missing scopes for restricted endpoints
    - Usage: `bash .github/skills/scc/check_api_scopes.sh`
 
-4. **scc.py** - Interactive MCP REPL (Python 3.9+ stdlib only)
+4. **test_sdk.py** - SDK connectivity test (requires SDK installation)
+   - Tests Python SDK with local installation at `/home/wolfy/scc/scc-sdk/`
+   - Validates SDK imports (Client, exceptions)
+   - Makes sample API call to verify connectivity
+   - Usage: `python3 .github/skills/scc/test_sdk.py`
+
+5. **scc.py** - Interactive MCP REPL (Python 3.9+ stdlib only)
    - Connects to SCC MCP server and lists available tools
    - Interactive `call <tool> <json_args>` loop for manual tool testing
    - No venv or external dependencies required
@@ -133,6 +139,7 @@ SCC key lifetimes vary by org policy and key type. If token refresh is unavailab
 | Discover available tools | `bash check_mcp.sh` |
 | Get org UUID | `bash get_scc_org.sh` |
 | Decode JWT / check scopes | `bash check_api_scopes.sh` |
+| Test Python SDK | `python3 test_sdk.py` |
 | Expired token | Manual rotation — see Token Lifecycle above |
 
 ## Integration with VS Code Agent

@@ -1,0 +1,12 @@
+# OPTIONAL REFERENCE - Cisco AI Assistant API Example
+# 
+# This file is reserved for experimental code and operator notes.
+# The AI Assistant API endpoint is not yet available in production.
+# 
+# For working examples, see:
+# - FMC Agent: @FMC for firewall operations
+# - SCC Agent: @SCC for user/group management
+# - scripts/scc_ai_assistant.py (ready for when endpoint becomes available)
+# - scripts/example_inventory.py (working FMC SDK example)
+#
+# This file can be used for personal notes and experiments.

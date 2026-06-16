@@ -26,3 +26,9 @@ SCC_REFRESH_KEY="REPLACE_WITH_REFRESH_TOKEN"
 # Organization details
 SCC_ORG_ID="Your Org Display Name"
 SCC_ORG_UUID="00000000-0000-0000-0000-000000000000"
+
+# Firewall Management Center (FMC) API configuration
+# Required for FMC agent operations (device management, policies, objects, VPN)
+SCC_FMC_API_KEY="REPLACE_WITH_FMC_ACCESS_TOKEN"
+SCC_EDGE_URL="https://api.us.security.cisco.com/firewall"
+# Update EDGE_URL to match your region: us, eu, apj, au, in, uae

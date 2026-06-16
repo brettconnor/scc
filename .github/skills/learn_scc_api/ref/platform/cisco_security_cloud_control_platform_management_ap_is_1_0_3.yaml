@@ -1,0 +1,2835 @@
+openapi: 3.1.0
+info:
+  title: Cisco Security Cloud Control Platform Management APIs
+  description: Manage the organizations in Security Cloud Control.
+  contact:
+    name: Cloud Security Developer Community
+  version: 1.0.3
+servers:
+- url: "https://api.security.cisco.com/{basePath}"
+  description: Security Cloud Control (SCC) base server URL
+  variables:
+    basePath:
+      description: API base path version
+      default: v1
+security:
+- bearerHttpAuthentication: []
+tags:
+- name: Admin Groups
+  description: Managing groups
+- name: Users
+  description: Managing users
+- name: Roles
+  description: Managing roles
+- name: Subscriptions
+  description: Managing subscriptions
+- name: Organizations
+  description: Managing organizations
+- name: Refresh Token
+  description: Refresh the access token.
+paths:
+  /organizations:
+    get:
+      tags:
+      - Organizations
+      summary: List Organizations
+      description: |-
+        List the organizations which you have access to in Security Cloud Control.
+        You can use query parameters to order and paginate the collection, and filter on the organization's properties.
+        When the `managerOrgId` field is provided , returns a list of all managed organizations with metadata for the specified manager organization ID.
+      operationId: listOrganizations
+      parameters:
+      - $ref: "#/components/parameters/max"
+      - $ref: "#/components/parameters/cursor"
+      - $ref: "#/components/parameters/sortBy"
+      - $ref: "#/components/parameters/order"
+      - name: organizationQueryParams
+        in: query
+        description: Filter on the properties of the organization.
+        required: false
+        schema:
+          $ref: "#/components/schemas/OrganizationQueryParams"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              $ref: "#/components/headers/Date"
+            Content-Type:
+              $ref: "#/components/headers/Content-Type"
+            trackingId:
+              $ref: "#/components/headers/trackingId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOrganizationResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    post:
+      tags:
+      - Organizations
+      summary: Create Organization
+      description: Create an organization in Security Cloud Control.
+      operationId: createOrganization
+      requestBody:
+        description: Create the organization with the specified properties.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationRequest"
+        required: true
+      responses:
+        "201":
+          description: OK
+          headers:
+            Date:
+              $ref: "#/components/headers/Date"
+            Content-Type:
+              $ref: "#/components/headers/Content-Type"
+            trackingId:
+              $ref: "#/components/headers/trackingId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateOrganizationResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}:
+    get:
+      tags:
+      - Organizations
+      summary: Get Organization Details
+      description: |-
+        Get the properties of the specific organization by organization ID.
+        * If the type of the organization is `MANAGER`, the system returns a list of managed organization IDs in the `managedOrgIds` field.
+        * If the type of the organization is `MANAGED`, the system returns a list of manager organization IDs in the `managerOrgIds` field.
+        * If the type of the organization is `STANDALONE`, neither `managedOrgIds` nor `managerOrgIds` fields are included in the response.
+      operationId: getOrganizationDetails
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              $ref: "#/components/headers/Date"
+            Content-Type:
+              $ref: "#/components/headers/Content-Type"
+            trackingId:
+              $ref: "#/components/headers/trackingId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+      security:
+      - bearerHttpAuthentication: []
+    put:
+      tags:
+      - Organizations
+      summary: Update Organization
+      description: |
+        Update the name of the specified organization by organization ID. Only Managed, Standalone, or Manager token can update its own organization.
+      operationId: updateOrganization
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      requestBody:
+        description: Update the organization name.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganizationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              $ref: "#/components/headers/Date"
+            Content-Type:
+              $ref: "#/components/headers/Content-Type"
+            trackingId:
+              $ref: "#/components/headers/trackingId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/subscriptions:
+    get:
+      tags:
+      - Subscriptions
+      summary: List Subscriptions
+      description: Retrieves a list of all subscriptions for a specific organization
+      operationId: getSubscriptions
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - name: subscriptionQueryParams
+        in: query
+        description: Query parameters for filtering subscriptions
+        required: false
+        schema:
+          $ref: "#/components/schemas/SubscriptionQueryParams"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSubscriptionResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    post:
+      tags:
+      - Subscriptions
+      summary: Create Subscription
+      description: |
+        Create a new subscription for the specific organization using the provided details.
+        Some products (for example, Duo) require additional configuration that cannot be completed through this API.
+        After creating the subscription, sign in to the web UI to provide the remaining information and finish the setup for those products.
+      operationId: createSubscription
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      requestBody:
+        description: Subscription creation request containing the claim code for creating
+          a new subscription
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionRequest"
+        required: true
+      responses:
+        "201":
+          description: Successfully created subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/subscriptions/claimInfo:
+    post:
+      tags:
+      - Subscriptions
+      summary: Read claim code details
+      description: Validates and retrieves information about a claim code for a specific
+        organization
+      operationId: readClaimCode
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      requestBody:
+        description: Claim code request containing the claim code to read and show
+          details
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimCodeReadRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimCodeResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/subscriptions/{subscriptionId}:
+    get:
+      tags:
+      - Subscriptions
+      summary: Get Subscription Details
+      description: Retrieves a specific subscription by its unique identifier for
+        a specific organization
+      operationId: getSubscriptionDetails
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/subscriptionId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    put:
+      tags:
+      - Subscriptions
+      summary: Update Subscription
+      description: |
+        Activates or deactivates a product within a subscription. Supports provisioning new tenants or using existing tenants.
+      operationId: updateSubscription
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/subscriptionId"
+      requestBody:
+        description: |
+          Request to activate or deactivate a product.
+          For standard activation, provide either `regionCode` for a new tenant or `sourceInstanceId` to reuse a tenant from a previously deactivated product.
+          `regionCode` is required when `sourceInstanceId` is not provided.
+          `sourceInstanceId` should be the `productId`/instance ID value of the deactivated product you want to reuse.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubscriptionRequest"
+            examples:
+              Standard Activation:
+                summary: Activate a non-DUO product
+                description: Standard Activation
+                value:
+                  productId: 8a5f4e4d-78f1-4fc9-b2f3-17f0f0c2b321
+                  status: true
+                  regionCode: NAM
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    patch:
+      tags:
+      - Subscriptions
+      summary: Share Subscription
+      description: "Patches a subscription for a managed organization by updating\
+        \ license quantities. This endpoint is used by manager organizations to update\
+        \ license quantities for their managed organizations. The token must belong\
+        \ to a manager organization, and the orgId in the URI path must be a managed\
+        \ organization.Supports provisioning new tenants or using existing product\
+        \ tenants based on the managed organization. "
+      operationId: patchSubscription
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/subscriptionId"
+      requestBody:
+        description: "Patch subscription request containing entitlement quantities,\
+          \ with optional existing tenant attachment and free product enablement.\
+          \ Supports both `entitlements`/`useExistingTenantsForProducts` and `entitlement`/`managedProductInstanceIdToConvert`/`managedSubscriptionIdToConvert`\
+          \ payload shapes."
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchSubscriptionRequest"
+            examples:
+              share_entitlements_only:
+                description: share_entitlements_only
+                value:
+                  entitlements:
+                  - id: E3S-AIDEF-ADV
+                    quantity: 10
+                  useExistingTenantsForProducts:
+                  - 8a9f43fa-f8f5-4aac-8d0b-380cf6656255
+              share_entitlements_with_free_product:
+                description: share_entitlements_with_free_product
+                value:
+                  entitlements:
+                  - id: E3S-AIDEF-ADV
+                    quantity: 10
+                  useExistingTenantsForProducts:
+                  - 8a9f43fa-f8f5-4aac-8d0b-380cf6656255
+                  enableFreeProducts:
+                  - firewall
+        required: true
+      responses:
+        "204":
+          description: Successfully patched subscription (no content)
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+  /organizations/{orgId}/adminGroups:
+    get:
+      tags:
+      - Admin Groups
+      summary: List Admin Groups
+      description: List all admin groups for the specified organization.
+      operationId: getGroups
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/max"
+      - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListGroupResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    post:
+      tags:
+      - Admin Groups
+      summary: Create Admin Group
+      description: Create a new admin group for the specified organization with the
+        provided details.
+      operationId: createGroup
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      requestBody:
+        description: "Request to create a new group with name, description, and appliesTo\
+          \ configuration"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupRequest"
+        required: true
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/adminGroups/{groupId}:
+    get:
+      tags:
+      - Admin Groups
+      summary: Get Admin Group Details
+      description: Get the details of a specific admin group within an organization
+        using its unique ID.
+      operationId: getGroupById
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    put:
+      tags:
+      - Admin Groups
+      summary: Update Admin Group
+      description: Update an existing admin group with the provided details.
+      operationId: updateGroup
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      requestBody:
+        description: "Request to update group with name, description, and type"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroupRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    delete:
+      tags:
+      - Admin Groups
+      summary: Delete Admin Group
+      description: Delete the specified admin group.
+      operationId: deleteGroupById
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      responses:
+        "204":
+          description: Successfully deleted group
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    patch:
+      tags:
+      - Admin Groups
+      summary: Patch Admin Group
+      description: Modify group membership by adding or removing users and managed
+        organizations. Supports multiple operations in a single request.
+      operationId: patchGroup
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      requestBody:
+        description: Request to patch group with users and/or managed organizations
+          operations.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchGroupRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchGroupResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/adminGroups/{groupId}/managedOrgs:
+    get:
+      tags:
+      - Admin Groups
+      summary: Get Managed Organizations for Shared Admin Group
+      description: List all managed organizations that have access to this shared
+        group.
+      operationId: getManagedOrganizations
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListManagedOrganizationByGroupResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/adminGroups/{groupId}/roles:
+    get:
+      tags:
+      - Admin Groups
+      summary: Get Assigned Roles by Group
+      description: List all roles assigned to the specified group.
+      operationId: getAssignedRolesByGroup
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RolesResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/adminGroups/{groupId}/users:
+    get:
+      tags:
+      - Admin Groups
+      summary: Get Group Users
+      description: List all users that belong to the specified group.
+      operationId: getGroupUsers
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/groupId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListUserResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+  /organizations/{orgId}/apiKeys/{apiKeyId}/token:
+    post:
+      tags:
+      - Refresh Token
+      summary: Refresh Access Token
+      description: |
+        Create a new access token using a refresh token for API key authentication.
+
+        The refresh token must be provided in the `Authorization` header as a Bearer token:
+
+        ```
+        Authorization: Bearer <refresh_token>
+        ```
+        The organization ID and API key ID are required path parameters.
+      operationId: createToken
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/apiKeyId"
+      requestBody:
+        description: The form data containing the refresh token and grant type.
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenFormRequest"
+            example:
+              grant_type: refresh_token
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+      security:
+      - refreshTokenAuth: []
+  /organizations/{orgId}/roles:
+    get:
+      tags:
+      - Roles
+      summary: List Roles
+      description: List all roles for the specified organization. Optionally filter
+        by role type or fetch roles assigned to a specific user.
+      operationId: getRoles
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - name: type
+        in: query
+        description: Optional status filter to filter roles by type.
+        required: false
+        schema:
+          type: string
+          enum:
+          - CUSTOM
+          - STATIC
+          example: CUSTOM
+      - name: userId
+        in: query
+        description: Optional user ID to fetch roles assigned to a specific user.
+        required: false
+        schema:
+          type: string
+          pattern: "^[0-9a-zA-Z]{20}$"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RolesResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/roles/{roleId}:
+    get:
+      tags:
+      - Roles
+      summary: Get Role Details
+      description: Get the details of the specified role.
+      operationId: getRoleById
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/roleId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    patch:
+      tags:
+      - Roles
+      summary: Update Role Assignments
+      description: Add or remove users and groups from a role. Specify the operation
+        type (add/remove) and the user or group ID.
+      operationId: patchRole
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/roleId"
+      requestBody:
+        description: Role assignment operations for users and groups
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchRoleRequest"
+        required: true
+      responses:
+        "200":
+          description: Successfully updated role assignments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleAssignmentOperationResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/users:
+    get:
+      tags:
+      - Users
+      summary: List Users
+      description: List all users for a specific organization. Optionally filter by
+        status.
+      operationId: getUsers
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - name: status
+        in: query
+        description: Optional status filter to filter users by status.
+        required: false
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - PENDING
+          - DISABLED
+          - SHARED
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListUserResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    patch:
+      tags:
+      - Users
+      summary: Invite and Manage User
+      description: "Invite and manage user accounts. Allows inviting/removing users,\
+        \ enabling/disabling accounts, resending email invites, and resetting password/MFA.\
+        \ Supports multiple operations in a single request."
+      operationId: patchUser
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchUserOperationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOperationResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "409":
+          $ref: "#/components/responses/409Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/users/{userId}:
+    get:
+      tags:
+      - Users
+      summary: Get User by ID
+      description: "Get the details of the specified user within the organization.\
+        \ If MFA factors are available for the user, the response also includes the\
+        \ list of enrolled factors."
+      operationId: getUserById
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/userId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                  $ref: "#/components/schemas/UserDetails"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+    put:
+      tags:
+      - Users
+      summary: Update User
+      description: Update the first and last name of the specified user within the
+        organization.
+      operationId: updateUser
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/userId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                  $ref: "#/components/schemas/UserDetails"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+  /organizations/{orgId}/users/{userId}/groups:
+    get:
+      tags:
+      - Users
+      summary: List User Groups
+      description: List all groups to which the specified user is assigned.
+      operationId: getUserGroups
+      parameters:
+      - $ref: "#/components/parameters/orgId"
+      - $ref: "#/components/parameters/userId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListGroupResponse"
+        "400":
+          $ref: "#/components/responses/400Error"
+        "401":
+          $ref: "#/components/responses/401Error"
+        "403":
+          $ref: "#/components/responses/403Error"
+        "404":
+          $ref: "#/components/responses/404Error"
+        "422":
+          $ref: "#/components/responses/422Error"
+        "500":
+          $ref: "#/components/responses/500Error"
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Standard error response payload returned by the API.
+      properties:
+        trackingId:
+          type: string
+          format: uuid
+          description: Unique identifier to help debug the flow.
+          example: e722d145-7f32-4a73-986f-82f28c9bf6ce
+        message:
+          type: string
+          description: Description of the error
+          example: Description
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred.
+          example: 2026-03-09T16:09:28.683007Z
+        statusCode:
+          type: integer
+          format: int32
+          description: HTTP status code for this error response.
+          example: 400
+        path:
+          type: string
+          description: Request path that produced the error.
+          example: /v1/organizations
+      required:
+      - message
+      - path
+      - statusCode
+      - timestamp
+      - trackingId
+    UpdateOrganizationRequest:
+      type: object
+      description: Organization update request
+      properties:
+        name:
+          type: string
+          description: The new name for the organization.
+          example: Acme Corporation
+      required:
+      - name
+    Organization:
+      type: object
+      description: The properties of the organization.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the organization
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          description: The name of the organization
+          example: Acme Corporation
+        regionCode:
+          type: string
+          description: The code for the region where the system deployed the organization
+            in Security Cloud Control.
+          enum:
+          - NAM
+          - US
+          - CA
+          - EU
+          - APJC
+          - AU
+          - IN
+          example: NAM
+        regionDescription:
+          type: string
+          description: The human-readable description of the region where the system
+            deployed the organization in Security Cloud Control.
+          example: North America
+        created:
+          type: string
+          format: date-time
+          description: The date and time specified in the ISO 8601 format when the
+            system created the organization.
+          example: 2025-10-10T10:15:30Z
+        type:
+          type: string
+          description: "The type of the organization: `STANDALONE`, `MANAGER`, or\
+            \ `MANAGED`."
+          enum:
+          - STANDALONE
+          - MANAGER
+          - MANAGED
+          example: MANAGED
+        managedOrgIds:
+          type: array
+          description: The list of IDs for the managed organizations.
+          example:
+          - 550e8400-e29b-41d4-a716-446655440000
+          - 550e8400-e29b-41d4-a716-446655440001
+          items:
+            type: string
+        managerOrgIds:
+          type: array
+          description: The list of IDs for the manager organizations.
+          example:
+          - 550e8400-e29b-41d4-a716-446655440003
+          - 550e8400-e29b-41d4-a716-446655440004
+          items:
+            type: string
+    UpdateUserRequest:
+      type: object
+      description: Request object for updating an existing user - only first name
+        and last name can be updated
+      properties:
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+    UserDetails:
+      type: object
+      description: Represents a user within an organization
+      example:
+        id: 00u2k67hy1xf3mRxG0h8
+        firstName: John
+        lastName: Doe
+        fullName: John Doe
+        email: john.doe@example.com
+        status: ACTIVE
+        type: Local
+        created: 2021-01-28T20:01:46Z
+        lastLogin: 2025-08-15T14:27:52Z
+        updated: 2025-08-15T14:27:52Z
+        activated: 2025-03-05T10:38:29Z
+        statusChanged: 2025-03-05T10:39:43Z
+        factors:
+        - id: ufs2bysphXKOkSQ1e0h7
+          factorType: push
+          provider: GOOGLE
+          status: ACTIVE
+          created: 2024-01-15T10:30:00Z
+          updated: 2024-06-20T14:45:00Z
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+          example: 00u2k67hy1xf3mRxG0h8
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        fullName:
+          type: string
+          description: User's display name
+          example: John Doe
+        email:
+          type: string
+          description: User's email address
+          example: flName@cisco.com
+        status:
+          type: string
+          description: User account status
+          enum:
+          - STAGED
+          - PROVISIONED
+          - ACTIVE
+          - RECOVERY
+          - LOCKED_OUT
+          - PASSWORD_EXPIRED
+          - SUSPENDED
+          - DEPROVISIONED
+          - DISABLED
+          - ENTERPRISE_DISABLED
+          example: ACTIVE
+        type:
+          type: string
+          description: User type
+          enum:
+          - Local
+          - Federated
+          - Shared
+          example: Local
+        created:
+          type: string
+          format: date-time
+          description: User account creation timestamp
+          example: 2021-01-28T20:01:46Z
+        lastLogin:
+          type: string
+          format: date-time
+          description: Last login timestamp
+          example: 2025-08-15T14:27:52Z
+        updated:
+          type: string
+          format: date-time
+          description: Last updated timestamp
+          example: 2025-08-15T14:27:52Z
+        activated:
+          type: string
+          format: date-time
+          description: User account activation timestamp
+          example: 2025-03-05T10:38:29Z
+        statusChanged:
+          type: string
+          format: date-time
+          description: Last status change timestamp
+          example: 2025-03-05T10:39:43Z
+        factors:
+          type: array
+          description: "List of MFA factors enrolled by the user, when available"
+          example:
+          - id: ufs2bysphXKOkSQ1e0h7
+            factorType: push
+            provider: GOOGLE
+            status: ACTIVE
+            created: 2024-01-15T10:30:00Z
+            updated: 2024-06-20T14:45:00Z
+          items:
+            $ref: "#/components/schemas/UserFactor"
+    UserFactor:
+      type: object
+      description: Represents a multi-factor authentication (MFA) factor enrolled
+        by a user
+      properties:
+        id:
+          type: string
+          description: Unique factor identifier
+          example: ufs2bysphXKOkSQ1e0h7
+        factorType:
+          type: string
+          description: The type of factor
+          example: push
+        provider:
+          type: string
+          description: The provider of the factor
+          example: GOOGLE
+        status:
+          type: string
+          description: The status of the factor
+          example: ACTIVE
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the factor was enrolled
+          example: 2024-01-15T10:30:00Z
+        updated:
+          type: string
+          format: date-time
+          description: Timestamp when the factor was last updated
+          example: 2024-06-20T14:45:00Z
+    UpdateSubscriptionRequest:
+      type: object
+      description: "Request object for updating a product within a subscription or\
+        \ updating entitlements for a managed organization. For activation without\
+        \ sourceInstanceId, regionCode is required."
+      example:
+        productId: 3742d652-6740-489c-b628-143f00690fea
+        status: true
+        sourceInstanceId: 123e4567-e89b-12d3-a456-426614174000
+        regionCode: NAM
+      properties:
+        productId:
+          type: string
+          description: Unique product identifier (required for activate/deactivate
+            flow)
+          example: 3742d652-6740-489c-b628-143f00690fea
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        status:
+          type: boolean
+          description: "Product activation status - true to activate, false to deactivate\
+            \ (required for activate/deactivate flow)"
+          example: true
+        sourceInstanceId:
+          type: string
+          description: Source instance ID for using an existing tenant during activation.
+            Provide this instead of regionCode when reusing a tenant from a previously
+            deactivated product. Use the `productId`/instance ID value of the deactivated
+            product you want to reuse.
+          example: 123e4567-e89b-12d3-a456-426614174000
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        regionCode:
+          type: string
+          description: Region code for provisioning a new tenant during activation.
+            Required when sourceInstanceId is not provided. Do not combine with sourceInstanceId.
+          enum:
+          - NAM
+          - EMEA
+          - APJC
+          - US
+          - GLOBAL
+          example: NAM
+    EntitlementSubscription:
+      type: object
+      description: Represents entitlement subscription details with quantity and assignment
+        information
+      properties:
+        id:
+          type: string
+          description: Entitlement id
+          example: CPT-SEC-ADV
+        name:
+          type: string
+          description: Entitlement product description/name
+          example: Cisco Multicloud Defense Advantage
+        quantity:
+          type: integer
+          format: int32
+          description: Product quantity
+          example: 100
+        assignedQuantity:
+          type: integer
+          format: int32
+          description: "Assigned product quantity from manager to managed org. Not\
+            \ present for standalone org's subscriptions, only present for CLAIMED\
+            \ type when listing subscriptions using manager org."
+          example: 50
+        type:
+          type: string
+          description: Subscription type. Nullable for standalone org's subscription.
+          enum:
+          - CLAIMED
+          - SHARED
+          example: CLAIMED
+    ProductRegion:
+      type: object
+      description: Represents a product region with code and description
+      properties:
+        regionCode:
+          type: string
+          description: Region code
+          example: NAM
+        regionDescription:
+          type: string
+          description: Region description
+          example: North America
+    Subscription:
+      type: object
+      description: Represents a subscription within an organization
+      example:
+        id: 3742d652-6740-489c-b628-143f00690fea
+        name: Sub008842110397382
+        created: 2025-02-03T07:04:54Z
+        type: paid
+        products:
+        - name: Cisco AI Defense
+          region: NAM
+          quantity: 100
+          status: ACTIVATED
+        - name: Cisco Security Cloud
+          region: EMEA
+          quantity: 50
+          status: ACTIVATED
+      properties:
+        id:
+          type: string
+          description: Unique subscription identifier
+          example: 3742d652-6740-489c-b628-143f00690fea
+        name:
+          type: string
+          description: Unique subscription name
+          example: Sub008842110397382
+        created:
+          type: string
+          format: date-time
+          description: Subscription creation date
+          example: 2025-02-03T07:04:54Z
+        type:
+          type: string
+          description: Subscription type
+          enum:
+          - trial
+          - free
+          - paid
+          example: paid
+        products:
+          type: array
+          description: Product names
+          example:
+          - name: Cisco AI Defense
+            region: NAM
+            quantity: 100
+            status: ACTIVATED
+          - name: Cisco Security Cloud
+            region: EMEA
+            quantity: 50
+            status: ACTIVATED
+          items:
+            $ref: "#/components/schemas/SubscriptionProduct"
+    SubscriptionProduct:
+      type: object
+      description: Represents a product associated with a subscription
+      properties:
+        id:
+          type: string
+          description: Unique product identifier
+          example: 3742d652-6740-489c-b628-143f00690fea
+        name:
+          type: string
+          description: Product name
+          example: Cisco AI Defense
+        regionCode:
+          type: string
+          description: Product region code
+          enum:
+          - NAM
+          - EMEA
+          - APJC
+          - US
+          - GLOBAL
+          example: NAM
+        regionDescription:
+          type: string
+          description: Product region description
+          example: North America
+        status:
+          type: string
+          description: Subscription license status
+          enum:
+          - NEW
+          - IN_PROGRESS
+          - ERROR
+          - ACTION_REQUIRED
+          - HIBERNATED
+          - NOT_PROVISIONED
+          - ACTIVATED
+          - DEACTIVATED
+          example: ACTIVATED
+        entitlements:
+          type: array
+          description: Entitlements associated with this product
+          example:
+          - id: c5dd4b96-...
+            name: ai-defense
+            quantity: 50
+          items:
+            $ref: "#/components/schemas/EntitlementSubscription"
+        allowedRegions:
+          type: array
+          description: List of allowed regions for this product
+          example:
+          - name: NAM
+            description: North America
+          - name: EU
+            description: Europe
+          items:
+            $ref: "#/components/schemas/ProductRegion"
+    UpdateGroupRequest:
+      type: object
+      description: Request object for updating an existing group - only name and description
+        can be updated
+      properties:
+        name:
+          type: string
+          description: Name of the user group
+          example: All products Administrator
+        description:
+          type: string
+          description: Detailed description of the group
+          example: Super users with all product access
+    Group:
+      type: object
+      description: Represents a group within an organization
+      properties:
+        id:
+          type: string
+          description: Unique group identifier
+          example: e980e881-b61f-11f0-a9b4-06fbd2118f4e
+        name:
+          type: string
+          description: Unique group name
+          example: Test_group_10_31_11_37
+        description:
+          type: string
+          description: Group description
+          example: Test group
+        orgId:
+          type: string
+          description: Group's owner organization id
+          example: 64c9f048-afc1-49ab-aa1a-cf7920535831
+        type:
+          type: string
+          description: Group type
+          enum:
+          - Local
+          - Federated
+          - Shared
+          - System
+          example: Federated
+        appliesTo:
+          type: string
+          description: Specifies to whom the group is shared with
+          enum:
+          - all
+          - manager
+          - selected_managed
+          example: all
+    CreateOrganizationRequest:
+      type: object
+      description: The properties of the organization.
+      properties:
+        name:
+          type: string
+          description: The name of the organization.
+          example: Acme Corporation
+        regionCode:
+          type: string
+          description: The code for the region where the system deployed the organization
+            in Security Cloud Control.
+          enum:
+          - NAM
+          - US
+          - CA
+          - EU
+          - APJC
+          - AU
+          - IN
+          example: NAM
+        type:
+          type: string
+          description: "The type of the organization for creation: `MANAGED`."
+          example: MANAGED
+      required:
+      - name
+      - regionCode
+      - type
+    CreateOrganizationResponse:
+      type: object
+      description: The properties of the created organization.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the organization
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          description: The name of the organization
+          example: Acme Corporation
+        regionCode:
+          type: string
+          description: The code for the region where the system deployed the organization
+            in Security Cloud Control.
+          enum:
+          - NAM
+          - US
+          - CA
+          - EU
+          - APJC
+          - AU
+          - IN
+          example: NAM
+        regionDescription:
+          type: string
+          description: The human-readable description of the region where the system
+            deployed the organization in Security Cloud Control.
+          example: North America
+        created:
+          type: string
+          format: date-time
+          description: The date and time specified in the ISO 8601 format when the
+            system created the organization.
+          example: 2025-10-10T10:15:30Z
+        type:
+          type: string
+          description: "The type of the organization for creation: `MANAGED`."
+          enum:
+          - MANAGED
+          example: MANAGED
+        managedOrgIds:
+          type: array
+          description: The list of IDs for the managed organizations.
+          example:
+          - 550e8400-e29b-41d4-a716-446655440000
+          - 550e8400-e29b-41d4-a716-446655440001
+          items:
+            type: string
+        managerOrgIds:
+          type: array
+          description: The list of IDs for the manager organizations.
+          example:
+          - 550e8400-e29b-41d4-a716-446655440003
+          - 550e8400-e29b-41d4-a716-446655440004
+          items:
+            type: string
+    CreateSubscriptionRequest:
+      type: object
+      description: Request object for creating a new subscription
+      example:
+        claimCode: PHJZ-DWMF-ZBYH-FYMB
+        products:
+        - id: da7d78a9-2db0-4fbc-a4bd-0565cd05a349
+          useExistingTenant: false
+          regionCode: GLOBAL
+          regionDescription: Global
+      properties:
+        claimCode:
+          type: string
+          description: Claim code for subscription creation
+          example: PHJZ-DWMF-ZBYH-FYMB
+        products:
+          type: array
+          description: List of products to be provisioned
+          example:
+          - id: da7d78a9-2db0-4fbc-a4bd-0565cd05a349
+            useExistingTenant: false
+            regionCode: GLOBAL
+            regionDescription: Global
+          items:
+            $ref: "#/components/schemas/ProvisioningProductRequest"
+    ProvisioningProductRequest:
+      type: object
+      description: Product request details for provisioning
+      properties:
+        id:
+          type: string
+          description: "Unique product identifier, an UUID"
+          example: da7d78a9-2db0-4fbc-a4bd-0565cd05a349
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        useExistingTenant:
+          type: boolean
+          description: Use existing tenant
+          example: false
+        regionCode:
+          type: string
+          description: Product region code
+          enum:
+          - NAM
+          - EMEA
+          - APJC
+          - US
+          - GLOBAL
+          example: NAM
+        regionDescription:
+          type: string
+          description: "Region Description enumeration with possible values: NORTH_AMERICA,\
+            \ ASIA_PACIFIC, EUROPE, Global"
+    ClaimCodeReadRequest:
+      type: object
+      description: Request object for claim code validation/reading
+      example:
+        claimCode: PHJZ-DWMF-ZBYH-FYMB
+      properties:
+        claimCode:
+          type: string
+          description: Claim code to read details of
+          example: PHJZ-DWMF-ZBYH-FYMB
+          minLength: 1
+      required:
+      - claimCode
+    ClaimCodeResponse:
+      type: object
+      description: "Preview of subscription details from a claim code, without subscription\
+        \ ID since it hasn't been created yet"
+      example:
+        name: Sub008842110397382
+        created: 2025-02-03T07:04:54Z
+        type: paid
+        products:
+        - name: Cisco AI Defense
+          region: NAM
+          quantity: 100
+          status: ACTIVATED
+        - name: Cisco Security Cloud
+          region: EMEA
+          quantity: 50
+          status: ACTIVATED
+      properties:
+        name:
+          type: string
+          description: Unique subscription name
+          example: Sub008842110397382
+        created:
+          type: string
+          format: date-time
+          description: Subscription creation date
+          example: 2025-02-03T07:04:54Z
+        type:
+          type: string
+          description: Subscription type
+          enum:
+          - trial
+          - free
+          - paid
+          example: paid
+        products:
+          type: array
+          description: Product names
+          example:
+          - name: Cisco AI Defense
+            region: NAM
+            quantity: 100
+            status: ACTIVATED
+          - name: Cisco Security Cloud
+            region: EMEA
+            quantity: 50
+            status: ACTIVATED
+          items:
+            $ref: "#/components/schemas/SubscriptionProduct"
+    CreateGroupRequest:
+      type: object
+      description: Request object for creating a new group
+      properties:
+        name:
+          type: string
+          description: Group name
+          example: Engineering_Team
+          minLength: 1
+        description:
+          type: string
+          description: Group description
+          example: Engineering department group
+        appliesTo:
+          type: string
+          description: Specifies to whom the group applies to
+          enum:
+          - all
+          - manager
+          - selected_managed
+          example: all
+      required:
+      - name
+    PatchUserOperationRequest:
+      type: object
+      description: Request object for patching users with various operations
+      properties:
+        users:
+          type: array
+          description: List of requests to perform the operation
+          example:
+          - email: john.doe@example.com
+            firstName: John
+            lastName: Doe
+            isAdmin: true
+            operation: invite
+          - email: jane.smith@example.com
+            operation: disable
+          items:
+            $ref: "#/components/schemas/PatchUserRequest"
+    PatchUserRequest:
+      type: object
+      description: Request object for patching a user with various operations
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address of the user to perform the operation on
+          example: john.doe@example.com
+        firstName:
+          type: string
+          description: First name of the user (required for 'invite' operation)
+          example: John
+        lastName:
+          type: string
+          description: Last name of the user (required for 'invite' operation)
+          example: Doe
+        factorId:
+          type: string
+          description: Factor ID to reset (required for 'reset_mfa' operation)
+          example: uft2odnt5ez9xSslf0h8
+        isAdmin:
+          type: boolean
+          description: SCC Org Admin role of the user
+          example: true
+        operation:
+          type: string
+          description: Operation type to perform on the user
+          enum:
+          - invite
+          - remove
+          - disable
+          - enable
+          - resend_email_invite
+          - reset_mfa
+          - reset_password
+          example: disable
+      required:
+      - email
+      - operation
+    UserOperationResponse:
+      type: object
+      description: Response containing results of user operations
+      properties:
+        results:
+          type: array
+          description: List of operation results for each user operation
+          example:
+          - email: john.doe@example.com
+            operation: invite
+            status: success
+          - email: jane.smith@example.com
+            operation: disable
+            status: error
+            errorDescription: "Failed to disable user: User not found in organization"
+          items:
+            $ref: "#/components/schemas/UserOperationResult"
+    UserOperationResult:
+      type: object
+      description: Result of a user operation
+      properties:
+        email:
+          type: string
+          description: User email
+          example: user@example.com
+        operation:
+          type: string
+          description: Operation performed
+          example: disable
+        status:
+          type: string
+          description: Status of the operation
+          enum:
+          - success
+          - error
+          example: success
+        errorDescription:
+          type: string
+          description: Error description if operation failed
+    EntitlementUpdateRequest:
+      type: object
+      description: Entitlement updates request
+      properties:
+        id:
+          type: string
+          description: Entitlement ID
+          example: E3S-AIDEF-ADV
+        quantity:
+          type: integer
+          format: int32
+          description: Entitlement quantity
+          example: 10
+    PatchSubscriptionRequest:
+      type: object
+      description: Request to patch a subscription for a managed organization. Used
+        by manager organizations to update SKU quantities for their managed organizations.
+      properties:
+        entitlements:
+          type: array
+          description: List of entitlements to update with their quantities
+          items:
+            $ref: "#/components/schemas/EntitlementUpdateRequest"
+          minItems: 1
+        useExistingTenantsForProducts:
+          type: array
+          description: "Optional. List of ProductIDs (UUIDs) for which existing tenants\
+            \ needs to be attached for.This is used when a manager want to attach\
+            \ already existing managed organization product tenants during sharing\
+            \ licenses.If any of the products listed in this are already provisioned,\
+            \ then that productId will be skipped."
+          example:
+          - 8a9f43fa-f8f5-4aac-8d0b-380cf6656255
+          items:
+            type: string
+        enableFreeProducts:
+          type: array
+          description: List of free products to enable
+          example:
+          - firewall
+          items:
+            enum:
+            - firewall
+      required:
+      - entitlements
+    PatchRoleRequest:
+      type: object
+      description: Request to add or remove users and groups from a role
+      properties:
+        users:
+          type: array
+          description: List of user operations (add/remove)
+          example:
+          - operation: add
+            id: abc@xyz.com
+          - operation: remove
+            id: johndoe@abc.com
+          items:
+            $ref: "#/components/schemas/RoleAssignmentOperation"
+        groups:
+          type: array
+          description: List of group operations (add/remove)
+          example:
+          - operation: add
+            id: 03c1e007-5408-648g-af45-b256d489c645
+          - operation: remove
+            id: 04d2f118-6519-759h-bg56-c367e59ad756
+          items:
+            $ref: "#/components/schemas/RoleAssignmentOperation"
+    RoleAssignmentOperation:
+      type: object
+      description: Operation to add or remove a user or group
+      properties:
+        operation:
+          type: string
+          description: Operation type
+          enum:
+          - add
+          - remove
+          example: add
+        id:
+          type: string
+          description: Unique identifier (UUID) of the user or group
+          example: 01a8c996-4297-426e-8e23-9034b267a423
+      required:
+      - id
+      - operation
+    RoleAssignmentOperationResponse:
+      type: object
+      description: Response containing results of role assignment operations
+      properties:
+        results:
+          type: array
+          description: List of operation results for each user and group
+          example:
+          - id: 550e8400-e29b-41d4-a716-446655440000
+            type: user
+            operation: add
+            status: success
+          - id: 03c1e007-5408-648g-af45-b256d489c645
+            type: group
+            operation: add
+            status: success
+          - id: 550e8400-e29b-41d4-a716-446655440001
+            type: user
+            operation: remove
+            status: failed
+            errorDescription: User not assigned to this role
+          items:
+            $ref: "#/components/schemas/RoleAssignmentOperationResult"
+    RoleAssignmentOperationResult:
+      type: object
+      description: Result of a role assignment operation for a user or group
+      properties:
+        id:
+          type: string
+          description: User or Group ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        type:
+          type: string
+          description: Type of entity
+          enum:
+          - user
+          - group
+          example: user
+        operation:
+          type: string
+          description: Operation performed
+          enum:
+          - add
+          - remove
+          example: add
+        status:
+          type: string
+          description: Status of the operation
+          enum:
+          - success
+          - failed
+          example: success
+        errorDescription:
+          type: string
+          description: Error description if operation failed
+          example: User not found in organization
+    ManagedOrgOperationItem:
+      type: object
+      description: Managed organization operation item for group management
+      properties:
+        operation:
+          type: string
+          description: Operation type. Either add or remove.
+          enum:
+          - add
+          - remove
+          example: add
+        id:
+          type: string
+          description: ID of the managed organization to add/remove the group to/from
+          example: Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi85NmFiYzJhYS0zZGNjLTExZTUtYTE1Mi1mZTM0ODE5Y2RjOWE
+      required:
+      - id
+      - operation
+    PatchGroupRequest:
+      type: object
+      description: Request object for patching group users and managed organizations
+      properties:
+        users:
+          type: array
+          description: List of user operations to perform on the group
+          example:
+          - operation: add
+            id: user@example.com
+          - operation: remove
+            id: anotheruser@example.com
+          items:
+            $ref: "#/components/schemas/UserOperationItem"
+        managedOrg:
+          type: array
+          description: List of managed organization operations to perform on the group
+          example:
+          - operation: add
+            id: Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi85NmFiYzJhYS0zZGNjLTExZTUtYTE1Mi1mZTM0ODE5Y2RjOWE
+          - operation: remove
+            id: Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi85NmFiYzJhYS0zZGNjLTExZTUtYTE1Mi1mZTM0ODE5Y2RjOWE
+          items:
+            $ref: "#/components/schemas/ManagedOrgOperationItem"
+    UserOperationItem:
+      type: object
+      description: User operation item for group management
+      properties:
+        operation:
+          type: string
+          description: Operation type. Either add or remove.
+          enum:
+          - add
+          - remove
+          example: add
+        id:
+          type: string
+          description: User ID (email) to add/remove to/from the group
+          example: user@example.com
+      required:
+      - id
+      - operation
+    GroupManagedOrgOperationResult:
+      type: object
+      description: Result of a group managed organization operation
+      properties:
+        managedOrgId:
+          type: string
+          description: Managed organization ID
+          example: Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi85NmFiYzJhYS0zZGNjLTExZTUtYTE1Mi1mZTM0ODE5Y2RjOWE
+        operation:
+          type: string
+          description: Operation performed
+          example: added
+        status:
+          type: string
+          description: Status of the operation
+          example: success
+        errorDescription:
+          type: string
+          description: Error description if operation failed
+    GroupUserOperationResult:
+      type: object
+      description: Result of a group user operation
+      properties:
+        emailId:
+          type: string
+          description: Email ID
+          example: johndoe@abc.com
+        operation:
+          type: string
+          description: Operation performed
+          example: removed
+        status:
+          type: string
+          description: Status of the operation
+          example: success
+        errorDescription:
+          type: string
+          description: Error description if operation failed
+    PatchGroupResponse:
+      type: object
+      description: Response containing results of group patch operations
+      properties:
+        userResults:
+          type: array
+          description: List of operation results for each user
+          example:
+          - emailId: user@example.com
+            operation: added
+            status: success
+          - emailId: anotheruser@example.com
+            operation: removed
+            status: success
+          items:
+            $ref: "#/components/schemas/GroupUserOperationResult"
+        managedOrgResults:
+          type: array
+          description: List of operation results for each managed organization
+          example:
+          - managedOrgId: Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi85NmFiYzJhYS0zZGNjLTExZTUtYTE1Mi1mZTM0ODE5Y2RjOWE
+            operation: added
+            status: success
+          items:
+            $ref: "#/components/schemas/GroupManagedOrgOperationResult"
+    OrganizationQueryParams:
+      type: object
+      description: Filter on the properties of the organization.
+      properties:
+        name:
+          type: string
+          description: The name of the organization. The system supports partial name
+            and case-insensitive substring matching.
+          example: Stark
+        type:
+          type: string
+          description: "The type of the organization: `STANDALONE`, `MANAGER`, or\
+            \ `MANAGED`."
+          enum:
+          - STANDALONE
+          - MANAGER
+          - MANAGED
+          example: STANDALONE
+        regionCode:
+          type: string
+          description: The code for the region where the system deployed the organization
+            in Security Cloud Control.
+          example: NAM
+        countryCode:
+          type: string
+          description: Country filter for enterprise search
+          example: United States
+        managerOrgId:
+          type: string
+          description: Optional manager organization ID filter to find organizations
+            managed by a specific manager org. Only applicable when type=MANAGED
+          example: 12345678-1234-1234-1234-123456789abc
+    ListOrganizationResponse:
+      type: object
+      description: Response containing a paginated list of organizations with metadata
+        for navigation through the result set
+      properties:
+        organizations:
+          type: array
+          description: The list of properties for the organizations.
+          example:
+          - id: 550e8400-e29b-41d4-a716-446655440003
+            name: Acme Corp
+            type: STANDALONE
+            regionCode: NAM
+            regionDescription: North America
+            created: 2026-03-11T15:59:17Z
+          items:
+            $ref: "#/components/schemas/Organization"
+    User:
+      type: object
+      description: Represents a user within an organization without MFA factor details
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+          example: 00u2k67hy1xf3mRxG0h8
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        fullName:
+          type: string
+          description: User's display name
+          example: John Doe
+        email:
+          type: string
+          description: User's email address
+          example: flName@cisco.com
+        status:
+          type: string
+          description: User account status
+          enum:
+          - STAGED
+          - PROVISIONED
+          - ACTIVE
+          - RECOVERY
+          - LOCKED_OUT
+          - PASSWORD_EXPIRED
+          - SUSPENDED
+          - DEPROVISIONED
+          - DISABLED
+          - ENTERPRISE_DISABLED
+          example: ACTIVE
+        type:
+          type: string
+          description: User type
+          enum:
+          - Local
+          - Federated
+          - Shared
+          example: Local
+        created:
+          type: string
+          format: date-time
+          description: User account creation timestamp
+          example: 2021-01-28T20:01:46Z
+        lastLogin:
+          type: string
+          format: date-time
+          description: Last login timestamp
+          example: 2025-08-15T14:27:52Z
+        updated:
+          type: string
+          format: date-time
+          description: Last updated timestamp
+          example: 2025-08-15T14:27:52Z
+        activated:
+          type: string
+          format: date-time
+          description: User account activation timestamp
+          example: 2025-03-05T10:38:29Z
+        statusChanged:
+          type: string
+          format: date-time
+          description: Last status change timestamp
+          example: 2025-03-05T10:39:43Z
+    ListUserResponse:
+      type: object
+      description: Response containing a list of users
+      properties:
+        users:
+          type: array
+          description: List of users
+          items:
+            $ref: "#/components/schemas/User"
+    ListGroupResponse:
+      type: object
+      description: Response containing a list of Users Groups
+      properties:
+        groups:
+          type: array
+          description: List of User Groups
+          example:
+          - id: e980e881-b61f-11f0-a9b4-06fbd2118f4e
+            name: Test_group_10_31_11_37
+            description: Test group
+            orgId: 64c9f048-afc1-49ab-aa1a-cf7920535831
+            type: Federated
+            appliesTo: all
+          - id: a7c2e851-91bf-4de4-bf88-7a01acb4b5c7
+            name: Engineering_Team
+            description: Engineering department group
+            orgId: 64c9f048-afc1-49ab-aa1a-cf7920535831
+            type: Federated
+            appliesTo: all
+          - id: f3b5c921-82df-5ef5-cf99-8b12bde5d6e8
+            name: Admin_Group
+            description: Administrator access group
+            orgId: 64c9f048-afc1-49ab-aa1a-cf7920535831
+            type: Federated
+            appliesTo: all
+          items:
+            $ref: "#/components/schemas/Group"
+    SubscriptionQueryParams:
+      type: object
+      description: Query parameters for filtering subscriptions
+      properties:
+        name:
+          type: string
+          description: Subscription name
+          example: Sub4850896938
+    ListSubscriptionResponse:
+      type: object
+      description: "Response containing a list of subscriptions.  It supports standalone\
+        \ org subscriptions as well as MSP-managed org subscriptions. For MSP-managed\
+        \ orgs, it fetches both shared and claimed subscriptions."
+      properties:
+        subscriptions:
+          type: array
+          description: List of subscriptions
+          example:
+          - id: 355c958f-da13-4be3-a9f8-d0a4f7929bce
+            name: SubT4850896938
+            created: 2025-09-25T15:33:49.795Z
+            products:
+            - id: 37e6148d-cdee-4c44-afd5-b65d32b43bc6
+              name: Cisco XDR
+              regionCode: NAM
+              regionDescription: North America
+              status: DEACTIVATED
+              entitlements:
+              - id: XDR-ADV
+                name: Advantage
+                quantity: 1
+          items:
+            $ref: "#/components/schemas/Subscription"
+    Product:
+      type: object
+      description: Represents a product associated with a role
+      properties:
+        key:
+          type: string
+          description: Product key identifier
+          example: secure-workload
+        name:
+          type: string
+          description: Name of the product
+          example: Cisco Secure Workload
+    Role:
+      type: object
+      description: |-
+        Represents a role within an organization. Supports multiple role types with different structures.
+
+        **Role Types:**
+        1. **STATIC Roles** - System-defined roles provided by the platform
+           - Fields: id, displayName, description, type, products
+           - Products include: key, name
+           - Example:
+           {
+               "id": "6280494d-dd0f-4655-b558-111111111114",
+               "displayName": "Test platform product 2 display name",
+               "description": "Test platform product 2 description",
+               "type": "STATIC",
+               "products": [
+                   {
+                       "key": "platform-test-product2",
+                       "name": "Test Platform Product 2"
+                   }
+               ]
+           }
+
+        2. **CUSTOM Roles** - User-created roles tailored to organizational needs
+           - Fields: id, displayName, type, products
+           - Products include: id, key, name
+           - Example:
+           {
+               "id": "01a8c996-4297-426e-8e23-9034b267a423",
+               "displayName": "New role 1",
+               "type": "CUSTOM",
+               "products": [
+                   {
+                       "key": "test-product-1",
+                       "name": "Test Product 1"
+                   }
+               ]
+           }
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the role
+          example: 01a8c996-4297-426e-8e23-9034b267a423
+        displayName:
+          type: string
+          description: Display name of the role
+          example: Paul test 2
+        description:
+          type: string
+          description: Description of the role
+          example: This is a role for managing workloads
+        type:
+          type: string
+          description: Type of the role
+          enum:
+          - CUSTOM
+          - STATIC
+          example: CUSTOM
+        products:
+          type: array
+          description: List of products associated with the role
+          example:
+          - key: secure-workload
+            name: Cisco Secure Workload
+          items:
+            $ref: "#/components/schemas/Product"
+    RolesResponse:
+      type: object
+      description: Response containing a list of roles
+      properties:
+        roles:
+          type: array
+          description: List of roles within the organization
+          example:
+          - id: 6280494d-dd0f-4655-b558-111111111114
+            displayName: Test platform product 2 display name
+            description: Test platform product 2 description
+            type: STATIC
+            products:
+            - key: platform-test-product2
+              name: Test Platform Product 2
+          items:
+            $ref: "#/components/schemas/Role"
+    ListManagedOrganizationByGroupResponse:
+      type: object
+      description: Response containing a list of organizations that are managed by
+        a group with metadata about the group
+      example:
+        id: d3747e73-711b-11f0-9c0f-aeea7c96bce1
+        name: Manager_shared_org
+        organizations:
+        - id: b70edd2b-d955-4be0-a149-4b1d5f6036a6
+          name: newOrg_08Aug
+          regionCode: NAM
+          regionDescription: North America
+          type: MANAGED
+      properties:
+        id:
+          type: string
+          description: The groupId of the group managing the organizations.
+          example: 550e8400-e29b-41d4-a716-446655440002
+        name:
+          type: string
+          description: The name of the group managing the organizations.
+          example: All products Administrator
+        organizations:
+          type: array
+          description: The list of properties for the organizations.
+          example:
+          - id: 550e8400-e29b-41d4-a716-446655440003
+            name: Acme Corp
+            type: STANDALONE
+          items:
+            $ref: "#/components/schemas/Organization"
+    RefreshTokenFormRequest:
+      type: object
+      description: Form data required to refresh an access token using a refresh token
+        grant.
+      properties:
+        grant_type:
+          type: string
+          description: The grant type for the token request
+          example: refresh_token
+      required:
+      - grant_type
+    Permission:
+      type: object
+      description: "Represents a permission associated with an access token, defining\
+        \ the role and scope of access for a specific product or service."
+      properties:
+        roleId:
+          type: string
+          description: Unique identifier for the role assigned to the user. This is
+            a UUID string.
+          example: 27092051-0c68-411e-b62a-33bc807f3dbb
+        roleName:
+          type: string
+          description: "Full name of the role, including the product or service name."
+          example: Security Cloud Control - Administrator
+        product:
+          type: string
+          description: Name of the product or service to which this permission applies.
+          example: Security Cloud Control
+        productKey:
+          type: string
+          description: Unique key identifier for the product or service.
+          example: enterprise
+        roleDisplayName:
+          type: string
+          description: "Human-readable display name for the role, typically shown\
+            \ in user interfaces."
+          example: Organization Administrator
+        productInstanceId:
+          type: string
+          description: Identifier for the specific instance of the product or service.
+          example: enterprise-default-instance
+        roleType:
+          type: string
+          description: "Type of the role, indicating whether it's static (predefined)\
+            \ or dynamic (custom)."
+          example: static
+        applicationScopeIds:
+          type: array
+          description: List of application scope identifiers that define the boundaries
+            of access for this permission.
+          items:
+            type: string
+    RefreshTokenResponse:
+      type: object
+      description: The properties of the response that contain the new access token
+        and related information.
+      example:
+        access_token: eyJhbGciOiJSUzI1NiJ9...
+        expires_in: 64799
+        refresh_token: RjFhMGZkYzctYTI2My00Njc2LTgyMWUtZDljNjhjMGMyYTk0...
+        refresh_token_expires_in: 5183999
+        token_type: Bearer
+      properties:
+        access_token:
+          type: string
+          description: The value of the access token used for API authentication.
+          example: eyJhbGciOiJSUzI1NiJ9...
+        expires_in:
+          type: integer
+          format: int32
+          description: The time in seconds when the access token expires.
+          example: 64799
+        refresh_token:
+          type: string
+          description: The value of the refresh token to use for future token refresh
+            operations.
+          example: RjFhMGZkYzctYTI2My00Njc2LTgyMWUtZDljNjhjMGMyYTk0...
+        refresh_token_expires_in:
+          type: integer
+          format: int32
+          description: The time in seconds when the refresh token expires.
+          example: 5183999
+        token_type:
+          type: string
+          default: Bearer
+          description: The type of the issued token.
+          example: Bearer
+        permissions:
+          type: array
+          description: List of permissions associated with the token.
+          items:
+            $ref: "#/components/schemas/Permission"
+      required:
+      - access_token
+      - expires_in
+      - refresh_token
+      - refresh_token_expires_in
+      - token_type
+  responses:
+    "400Error":
+      description: "Bad Request: The request was invalid or cannot be otherwise served.\
+        \ An accompanying error message will explain further."
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Bad Request
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 400
+            path: "/v1/{resource}"
+    "401Error":
+      description: "Unauthorized: Authentication credentials were missing or incorrect."
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Unauthorized
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 401
+            path: "/v1/{resource}"
+    "403Error":
+      description: "Forbidden: The request is understood, but it has been refused\
+        \ or access is not allowed."
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Forbidden
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 403
+            path: "/v1/{resource}"
+    "404Error":
+      description: "Not Found: The URI requested is invalid or the resource requested,\
+        \ such as a user, does not exist. Also returned when the requested format\
+        \ is not supported by the requested method."
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Not Found
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 404
+            path: "/v1/{resource}"
+    "409Error":
+      description: "Conflict: The request could not be completed due to a conflict\
+        \ with the current state of the target resource."
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Conflict
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 409
+            path: "/v1/{resource}"
+    "422Error":
+      description: Unprocessable Entity
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Unprocessable Entity
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 422
+            path: "/v1/{resource}"
+    "500Error":
+      description: "Internal Server Error: Something went wrong on the server. If\
+        \ the issue persists, feel free to contact the Cisco Security Cloud Control\
+        \ support team with the trackingId provided in the response header."
+      headers:
+        Content-Type:
+          $ref: "#/components/headers/Content-Type"
+        Date:
+          $ref: "#/components/headers/Date"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            trackingId: e722d145-7f32-4a73-986f-82f28c9bf6ce
+            message: Internal Server Error
+            timestamp: 2026-03-09T16:09:28.683007Z
+            statusCode: 500
+            path: "/v1/{resource}"
+  parameters:
+    orgId:
+      name: orgId
+      in: path
+      description: Unique identifier of the organization. This is a UUID string.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      example: 123e4567-e89b-12d3-a456-426614174000
+    groupId:
+      name: groupId
+      in: path
+      description: Unique identifier of the group. This is a UUID string.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      example: e980e881-b61f-11f0-a9b4-06fbd2118f4e
+    roleId:
+      name: roleId
+      in: path
+      description: Unique identifier of the role. This is a UUID string.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      example: f091f992-c72a-22a1-b9c5-17aed3229a5f
+    userId:
+      name: userId
+      in: path
+      description: Unique identifier of the user.
+      required: true
+      schema:
+        type: string
+        maxLength: 20
+        minLength: 20
+        pattern: "^[0-9a-zA-Z]{20}$"
+      example: 00u2k67hy1xf3mRxG0h8
+    subscriptionId:
+      name: subscriptionId
+      in: path
+      description: Unique identifier of the subscription. This is a UUID string.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      example: 987fcdeb-51a2-43f1-b456-123456789abc
+    apiKeyId:
+      name: apiKeyId
+      in: path
+      description: Unique identifier of the API key. This is a UUID string.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+    max:
+      name: max
+      in: query
+      description: The maximum number of items to return on a page in the response.
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 100
+        maximum: 500
+        minimum: 1
+      example: 100
+    cursor:
+      name: cursor
+      in: query
+      description: The place in the collection where the system fetches the next set
+        of results.
+      required: false
+      schema:
+        type: string
+      example: 30bc93c6-e5fb-31fc-8947-80d053feff40
+    sortBy:
+      name: sortBy
+      in: query
+      description: "Sort the collection by the field name. Supported values are `name`,\
+        \ `type`, and `regionCode`."
+      required: false
+      schema:
+        type: string
+        enum:
+        - name
+        - type
+        - regionCode
+      example: name
+    order:
+      name: order
+      in: query
+      description: "Sort the collection by the specified order, either `asc` or `desc`."
+      required: false
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+      example: asc
+  headers:
+    Content-Type:
+      description: The MIME content type of the response body.
+      schema:
+        type: string
+      example: application/json
+    Date:
+      description: The timestamp of the response.
+      schema:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+      example: 2025-03-14T18:34:25Z
+    trackingId:
+      description: Unique identifier to help debug the flow.
+      schema:
+        type: string
+        format: uuid
+      example: e9022120-96ef-4208-8ce4-be7a40c4b8cc
+  securitySchemes:
+    bearerHttpAuthentication:
+      type: http
+      description: |
+        JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'.
+        Required scopes: security:enterprise:member (Read organizations),
+        security:enterprise:admin (Write organizations)
+      scheme: bearer
+      bearerFormat: JWT
+    refreshTokenAuth:
+      type: http
+      description: Refresh token for obtaining a new access token
+      scheme: bearer
+      bearerFormat: JWT

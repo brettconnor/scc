@@ -46,4 +46,8 @@ ENV/
 .env.local
 *.log
 
+# SDK directories (installed dependencies)
+scc-fm-sdk/
+scc-sdk/
+
 hosts.sh

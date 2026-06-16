@@ -1,0 +1,3029 @@
+openapi: 3.0.3
+info:
+  title: Security Cloud Control - Common Objects Public APIs
+  description: >
+    Public APIs for Common Objects, allowing external systems to query and
+    manage network objects and groups.
+
+
+    ## Authentication
+
+    All API requests require Bearer token authentication using SCC API Key
+    tokens with appropriate scopes.
+
+    Include the token in the Authorization header:
+
+    ```
+
+    Authorization: Bearer <SCC API Key Token>
+
+    ```
+
+
+    ## Regional Routing
+
+    The service is available in multiple regions.
+
+    API keys belong to a Security Cloud Control organization in a specific
+    region.
+
+    Send requests to the regional API base URL that matches your organization.
+
+    - **US (North America)**: https://api.security.cisco.com
+
+    - **EU (Europe)**: https://api.eu.security.cisco.com
+
+    - **IN (India)**: https://api.in.security.cisco.com
+
+    - **APJ (Asia Pacific Japan)**: https://api.apj.security.cisco.com
+
+    - **AU (Australia)**: https://api.au.security.cisco.com
+
+    - **UAE (Middle East)**: https://api.uae.security.cisco.com
+
+
+    Using the wrong region will result in a 421 (Misdirected Request) error.
+
+
+    ## Error Handling
+
+    The API uses standard HTTP status codes for errors. Error response bodies
+    are JSON objects
+
+    with at least a human-readable `message`. Additional fields
+
+    (e.g. `code`, `details`, `field`, `trackingId`, `metadata`) may be present.
+
+    Prefer HTTP status codes when handling errors.
+  version: 1.0.0
+  contact:
+    name: Cisco Support
+    url: 'https://www.cisco.com/c/en/us/support/index.html'
+servers:
+  - url: 'https://api.security.cisco.com/v1'
+    description: Production - US (North America)
+  - url: 'https://api.eu.security.cisco.com/v1'
+    description: Production - EU (Europe)
+  - url: 'https://api.in.security.cisco.com/v1'
+    description: Production - IN (India)
+  - url: 'https://api.apj.security.cisco.com/v1'
+    description: Production - APJ (Asia Pacific Japan)
+  - url: 'https://api.au.security.cisco.com/v1'
+    description: Production - AU (Australia)
+  - url: 'https://api.uae.security.cisco.com/v1'
+    description: Production - UAE (Middle East)
+security:
+  - bearerAuth: []
+tags:
+  - name: Objects Endpoints
+    description: Endpoints for managing network objects and network groups
+paths:
+  '/organizations/{orgID}/domains/global/objects':
+    get:
+      summary: List network objects and groups
+      description: >
+        Lightweight endpoint to retrieve network objects or groups with basic
+        details (no timestamps or audit fields).
+      operationId: listObjects
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+        - name: type
+          in: query
+          required: false
+          description: >-
+            Type of objects to retrieve (optional - if not specified, returns
+            both objects and groups). If both types are specified, the response
+            will be a mixed list of objects and groups.
+          schema:
+            type: string
+            enum:
+              - network
+              - networkGroup
+              - network|networkGroup
+            description: 'Allowed values: network, networkGroup, network|networkGroup'
+          example: network
+        - name: subtype
+          in: query
+          description: >-
+            Filter by network object subtype (only applicable for networkObject
+            type). If multiple subtypes are specified, the response will be a
+            mixed list of objects with the specified subtypes.
+          schema:
+            type: string
+            enum:
+              - host
+              - range
+              - cidr
+              - fqdn
+              - host|range|cidr|fqdn
+            description: 'Allowed values: host, range, cidr, fqdn, host|range|cidr|fqdn'
+        - name: search
+          in: query
+          description: >
+            Unified search across name, description, creator, and values
+            (case-insensitive partial match).
+
+            Searches network object values (IP addresses, CIDRs, FQDNs, ranges)
+            and inline object values within groups.
+
+            This provides a single search experience where users can find
+            objects by any remembered text.
+          schema:
+            type: string
+            description: Search term to filter objects
+          examples:
+            byName:
+              summary: Search by object name
+              value: prod-server
+            byIP:
+              summary: Search by IP address
+              value: 192.168.1
+            byFQDN:
+              summary: Search by FQDN
+              value: example.com
+        - name: value
+          in: query
+          description: >
+            Filter objects by value only (partial match). Use this for precise
+            value-only filtering.
+
+            For general search, prefer the 'search' parameter which searches all
+            fields including values.
+          schema:
+            type: string
+            maxLength: 255
+            description: Partial value to search for (case-insensitive)
+        - name: usableBy
+          in: query
+          description: Filter by which product can use the objects/groups
+          schema:
+            type: string
+            description: Product identifier
+            example: sdWan
+          examples:
+            sdWan:
+              summary: Filter for SD-WAN usable objects
+              value: sdWan
+            secureAccess:
+              summary: Filter for Secure Access usable objects
+              value: secureAccess
+        - name: ipVersionsPresent
+          in: query
+          description: |
+            Filter by IP versions present (only applicable for SDWAN objects)
+            <br>**NOTE**: Works only when 'usableBy' filter is set to 'sdWan'
+          schema:
+            type: string
+            enum:
+              - ipv4
+              - ipv6
+              - ipv4|ipv6
+            description: 'Allowed values: ipv4, ipv6, ipv4|ipv6'
+        - name: memberOf
+          in: query
+          description: Filter all the members of the group with the given ID
+          schema:
+            type: string
+            description: Group ID
+            format: uuid
+        - name: sort
+          in: query
+          description: Sort order of the items
+          schema:
+            type: string
+            description: 'Allowed values: updatedAt, createdAt, name'
+            pattern: '^(updatedAt|createdAt|name):(asc|desc)$'
+            default: 'updatedAt:desc'
+          examples:
+            updatedAtDesc:
+              summary: Sort by updatedAt in descending order
+              value: 'updatedAt:desc'
+            updatedAtAsc:
+              summary: Sort by updatedAt in ascending order
+              value: 'updatedAt:asc'
+            createdAtAsc:
+              summary: Sort by createdAt in ascending order
+              value: 'createdAt:asc'
+            createdAtDesc:
+              summary: Sort by createdAt in descending order
+              value: 'createdAt:desc'
+            nameAsc:
+              summary: Sort by name in ascending order
+              value: 'name:asc'
+            nameDesc:
+              summary: Sort by name in descending order
+              value: 'name:desc'
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 250
+            default: 30
+            description: 'Integer parameter, minimum: 1, maximum: 250, default: 30'
+        - name: offset
+          in: query
+          description: Number of items to skip before starting to collect the result set
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            description: 'Integer parameter, minimum: 0, default: 0'
+        - name: next
+          in: query
+          description: >-
+            Cursor for pagination - use the 'next' cursor value from previous
+            response
+          schema:
+            type: string
+            description: String parameter value
+        - name: prev
+          in: query
+          description: >-
+            Cursor for reverse pagination - use the 'prev' cursor value from
+            previous response
+          schema:
+            type: string
+            description: String parameter value
+        - name: secondaryIds
+          in: query
+          description: >
+            Filter by secondary IDs (Secure Access integer IDs).
+
+            Provide comma-separated positive integers. Maximum 100 IDs per
+            request.
+          schema:
+            type: string
+            pattern: '^[0-9]+(,[0-9]+)*,?$'
+            description: Comma-separated list of secondary IDs (positive integers)
+          examples:
+            singleId:
+              summary: Filter by single secondary ID
+              value: '10093325'
+            multipleIds:
+              summary: Filter by multiple secondary IDs
+              value: '10093325,10000244'
+      responses:
+        '200':
+          description: List of network objects and/or groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectsListResponse'
+              examples:
+                networkObjects:
+                  summary: List of network objects (when type=networkObject)
+                  value:
+                    objects:
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000001
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000002
+                            name: web-tier
+                    pagination:
+                      limit: 30
+                      hasMore: false
+                      total: 1
+                    counts:
+                      totalObjects: 1
+                      totalGroups: 0
+                      totalInlineObjects: 0
+                networkGroups:
+                  summary: List of network groups (when type=networkGroup)
+                  value:
+                    objects:
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 67890
+                        type: networkGroup
+                        name: web-servers
+                        description: All production web servers
+                        compositionType: homogeneous
+                        memberObjects:
+                          - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                            name: web-server-01
+                            secondaryId: 1001
+                        memberGroups:
+                          - id: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                            name: nested-group-01
+                            secondaryId: 2001
+                        inlineObjects:
+                          - id: 5fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 3001
+                            subtype: host
+                            value: 192.168.1.20
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 7fa85f64-5717-4562-b3fc-2c963f66afa9
+                            secondaryId: 10000003
+                            name: parent-group
+                    pagination:
+                      limit: 30
+                      hasMore: false
+                      total: 1
+                    counts:
+                      totalObjects: 1
+                      totalGroups: 1
+                      totalInlineObjects: 1
+                mixedObjects:
+                  summary: Mixed list of objects and groups (when type is omitted)
+                  value:
+                    objects:
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000004
+                            name: web-servers
+                      - id: 4fa85f64-5717-4562-b3fc-2c963f66afa7
+                        secondaryId: 67890
+                        type: networkGroup
+                        name: web-servers
+                        description: All production web servers
+                        compositionType: homogeneous
+                        memberObjects:
+                          - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                            name: web-server-01
+                            secondaryId: 12345
+                        memberGroups: []
+                        inlineObjects:
+                          - subtype: host
+                            value: 192.168.1.20
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf: []
+                    pagination:
+                      limit: 30
+                      hasMore: false
+                      total: 2
+                    counts:
+                      totalObjects: 1
+                      totalGroups: 1
+                      totalInlineObjects: 1
+                offsetPagination:
+                  summary: List of objects with offset pagination (when offset=3)
+                  value:
+                    objects:
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000005
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000006
+                            name: web-tier
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000007
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000008
+                            name: web-tier
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000009
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000010
+                            name: web-tier
+                    pagination:
+                      offset: 3
+                      limit: 3
+                      hasMore: true
+                      total: 10
+                      next: MTA3fDIwMjUtMTAtMjBUMjM6NDA6NDguMzQ4MTc4Wg==
+                      prev: NzZ8MjAyNS0xMC0yMFQyMzo0MDo0OC4zMTQ5MTZa
+                    counts:
+                      totalObjects: 3
+                      totalGroups: 0
+                      totalInlineObjects: 0
+                cursorPagination:
+                  summary: >-
+                    List of objects with cursor pagination (when next=<cursor>
+                    or prev=<cursor>)
+                  value:
+                    objects:
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000011
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000012
+                            name: web-tier
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000013
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000014
+                            name: web-tier
+                      - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Production web server
+                        metadata:
+                          createdAt: '2025-10-25T02:08:33.470Z'
+                          updatedAt: '2025-10-25T02:08:33.470Z'
+                          createdBy: user@cisco.com
+                          updatedBy: admin@cisco.com
+                          version: 1
+                        usageTracking:
+                          usableBy:
+                            - sdWan
+                        memberOf:
+                          - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                            secondaryId: 10000015
+                            name: production-servers
+                          - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                            secondaryId: 10000016
+                            name: web-tier
+                    pagination:
+                      limit: 3
+                      hasMore: true
+                      total: 10
+                      next: MTA3fDIwMjUtMTAtMjBUMjM6NDA6NDguMzQ4MTc4Wg==
+                      prev: NzZ8MjAyNS0xMC0yMFQyMzo0MDo0OC4zMTQ5MTZa
+                    counts:
+                      totalObjects: 3
+                      totalGroups: 0
+                      totalInlineObjects: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/organizations/{orgID}/domains/global/objects/{id}':
+    get:
+      summary: Get network object or group by ID
+      description: |
+        Retrieve detailed information for a network object or group.
+      operationId: getObjectById
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the network object or group
+          schema:
+            type: string
+            format: uuid
+            description: String parameter value
+      responses:
+        '200':
+          description: Network object or group details
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/NetworkObject'
+                  - $ref: '#/components/schemas/NetworkGroup'
+              examples:
+                networkObject:
+                  summary: Network object response
+                  value:
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    secondaryId: 12345
+                    type: network
+                    name: web-server-01
+                    subtype: host
+                    value: 192.168.1.10
+                    description: Production web server
+                    metadata:
+                      createdAt: '2025-10-20T10:30:00Z'
+                      updatedAt: '2025-10-22T14:15:00Z'
+                      createdBy: user@cisco.com
+                      updatedBy: admin@cisco.com
+                      version: 1
+                    usageTracking:
+                      usableBy:
+                        - sdWan
+                        - secureAccess
+                      usedIn:
+                        - sdwan
+                      usageDetails:
+                        - product: sd-wan
+                          inUse: true
+                          resourceTypes:
+                            - resourceType: policy
+                              usageCount: 5
+                            - resourceType: rule
+                              usageCount: 2
+                    memberOf:
+                      - id: 9fa85f64-5717-4562-b3fc-2c963f66afa7
+                        secondaryId: 10000001
+                        name: production-servers
+                      - id: 8fa85f64-5717-4562-b3fc-2c963f66afa8
+                        secondaryId: 10000002
+                        name: web-tier
+                networkGroup:
+                  summary: Network group response
+                  value:
+                    id: 456e7890-e89b-12d3-a456-426614174111
+                    secondaryId: 67890
+                    type: networkGroup
+                    name: web-servers
+                    description: All production web servers
+                    compositionType: homogeneous
+                    memberObjects:
+                      - id: 123e4567-e89b-12d3-a456-426614174000
+                        name: web-server-01
+                        secondaryId: 1001
+                    memberGroups:
+                      - id: 789e0123-e89b-12d3-a456-426614174222
+                        name: nested-group-01
+                        secondaryId: 2001
+                    inlineObjects:
+                      - id: 889e0123-e89b-12d3-a456-426614174223
+                        secondaryId: 3001
+                        subtype: host
+                        value: 192.168.1.20
+                    metadata:
+                      createdAt: '2025-10-20T10:30:00Z'
+                      updatedAt: '2025-10-22T14:15:00Z'
+                      createdBy: user@cisco.com
+                      updatedBy: admin@cisco.com
+                      version: 1
+                    usageTracking:
+                      usableBy:
+                        - sdWan
+                        - secureAccess
+                      usedIn:
+                        - sdwan
+                      usageDetails:
+                        - product: sd-wan
+                          inUse: true
+                          resourceTypes:
+                            - resourceType: policy
+                              usageCount: 3
+                    memberOf:
+                      - id: 7fa85f64-5717-4562-b3fc-2c963f66afa9
+                        secondaryId: 10000003
+                        name: parent-group
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/organizations/{orgID}/domains/global/objects/networks':
+    post:
+      summary: Create network object
+      description: >
+        Create a new network object.
+
+        **Organization Limit**: Each organization is limited to a maximum of
+        100,000 network objects.
+
+        If this limit is reached, a 422 Unprocessable Entity response will be
+        returned.
+
+        To create new objects, you must first delete existing unused network
+        objects.
+      operationId: createNetworkObject
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetworkObjectRequest'
+            examples:
+              host_object:
+                summary: Create a host object
+                value:
+                  name: web-server-01
+                  subtype: host
+                  value: 192.168.1.10
+                  description: Primary web server in DMZ
+              cidr_object:
+                summary: Create a CIDR object
+                value:
+                  name: corporate-network
+                  subtype: cidr
+                  value: 10.0.0.0/8
+                  description: Corporate internal network
+              fqdn_object:
+                summary: Create an FQDN object
+                value:
+                  name: api-endpoint
+                  subtype: fqdn
+                  value: api.example.com
+                  description: External API endpoint
+      responses:
+        '201':
+          description: Network object created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkObjectWithoutUsage'
+              examples:
+                created_object:
+                  summary: Created network object response
+                  value:
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    secondaryId: 12345
+                    type: network
+                    name: web-server-01
+                    subtype: host
+                    value: 192.168.1.10
+                    description: Primary web server in DMZ
+                    metadata:
+                      createdAt: '2025-10-30T10:00:00Z'
+                      updatedAt: '2025-10-30T10:00:00Z'
+                      createdBy: user@cisco.com
+                      updatedBy: user@cisco.com
+                      version: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/organizations/{orgID}/domains/global/objects/networks/{id}':
+    patch:
+      summary: Update network object
+      description: >
+        Update an existing network object. Only provided fields will be updated
+        (partial update).
+
+        **Note:** You cannot change the `subtype` field of an existing object.
+        To modify this field, delete the object and create a new one.
+      operationId: updateNetworkObject
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the network object to update
+          schema:
+            type: string
+            format: uuid
+            description: String parameter value
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNetworkObjectRequest'
+            examples:
+              update_object:
+                summary: Update network object
+                value:
+                  name: web-server-01-updated
+                  subtype: host
+                  value: 192.168.1.11
+                  description: Updated primary web server
+      responses:
+        '200':
+          description: Network object updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkObjectWithoutUsage'
+              examples:
+                updated_object:
+                  summary: Updated network object response
+                  value:
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    secondaryId: 12345
+                    type: network
+                    name: web-server-01-updated
+                    subtype: host
+                    value: 192.168.1.11
+                    description: Updated primary web server
+                    metadata:
+                      createdAt: '2025-10-30T10:00:00Z'
+                      updatedAt: '2025-10-30T11:30:00Z'
+                      createdBy: user@cisco.com
+                      updatedBy: admin@cisco.com
+                      version: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete network object
+      description: Delete a network object by ID
+      operationId: deleteNetworkObject
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the network object to delete
+          schema:
+            type: string
+            format: uuid
+            description: String parameter value
+      responses:
+        '204':
+          description: Network object deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageConflictError'
+              example:
+                code: string
+                message: string
+                usageLocations: []
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/organizations/{orgID}/domains/global/objects/networkGroups':
+    post:
+      summary: Create network group
+      description: >
+        Create a new network group.
+
+        **Limits:**
+
+        - An organization cannot have more than 10,000 network groups.
+
+        - A single group cannot contain more than 1,500 objects (including
+        member objects, inline objects, and objects within nested member groups
+        up to 3 levels deep).
+
+        - Inline objects count toward the organization's 100,000 network object
+        limit. Note: Even after the 10,000 group limit is reached, you can still
+        add inline objects to existing groups as long as the total object count
+        stays below 100,000.
+      operationId: createNetworkGroup
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetworkGroupRequest'
+            examples:
+              simple_group:
+                summary: Create group with member objects
+                value:
+                  name: web-servers
+                  description: All production web servers
+                  memberObjects:
+                    - 123e4567-e89b-12d3-a456-426614174000
+                    - 223e4567-e89b-12d3-a456-426614174001
+              group_with_inline:
+                summary: Create group with inline objects
+                value:
+                  name: datacenter-hosts
+                  description: Datacenter infrastructure hosts
+                  inlineObjects:
+                    - subtype: host
+                      value: 10.1.1.10
+                    - subtype: host
+                      value: 10.1.1.11
+                    - subtype: cidr
+                      value: 10.1.2.0/24
+      responses:
+        '201':
+          description: Network group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkGroupWithoutUsage'
+              examples:
+                created_group:
+                  summary: Created network group response
+                  value:
+                    id: 456e7890-e89b-12d3-a456-426614174111
+                    secondaryId: 67890
+                    type: networkGroup
+                    name: web-servers
+                    description: All production web servers
+                    compositionType: homogeneous
+                    memberObjects:
+                      - id: 123e4567-e89b-12d3-a456-426614174000
+                        name: web-server-01
+                        secondaryId: 1001
+                      - id: 223e4567-e89b-12d3-a456-426614174001
+                        name: web-server-02
+                        secondaryId: 1002
+                    memberGroups: []
+                    inlineObjects: []
+                    metadata:
+                      createdAt: '2025-10-30T10:00:00Z'
+                      updatedAt: '2025-10-30T10:00:00Z'
+                      createdBy: user@cisco.com
+                      updatedBy: user@cisco.com
+                      version: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/organizations/{orgID}/domains/global/objects/networkGroups/{id}':
+    patch:
+      summary: Update network group
+      description: >
+        Update an existing network group.
+
+        **Limits:**
+
+        - A single group cannot contain more than 1,500 objects (including
+        member objects, inline objects, and objects within nested member groups
+        up to 3 levels deep).
+
+        - Adding inline objects counts toward the organization's 100,000 network
+        object limit. Note: Even after the 10,000 group limit is reached, you
+        can still add inline objects to existing groups as long as the total
+        object count stays below 100,000.
+
+        - If an update would exceed either limit, a 422 Unprocessable Entity
+        response will be returned.
+      operationId: updateNetworkGroup
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the network group to update
+          schema:
+            type: string
+            format: uuid
+            description: String parameter value
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNetworkGroupRequest'
+            examples:
+              update_group:
+                summary: Update network group
+                value:
+                  name: web-servers-updated
+                  description: Updated web servers group
+                  memberObjects:
+                    - 123e4567-e89b-12d3-a456-426614174000
+                    - 223e4567-e89b-12d3-a456-426614174001
+                    - 323e4567-e89b-12d3-a456-426614174002
+                  inlineObjects:
+                    - subtype: host
+                      value: 10.1.1.20
+      responses:
+        '200':
+          description: Network group updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkGroupWithoutUsage'
+              examples:
+                updated_group:
+                  summary: Updated network group response
+                  value:
+                    id: 456e7890-e89b-12d3-a456-426614174111
+                    secondaryId: 67890
+                    type: networkGroup
+                    name: web-servers-updated
+                    description: Updated web servers group
+                    compositionType: homogeneous
+                    memberObjects:
+                      - id: 123e4567-e89b-12d3-a456-426614174000
+                        name: web-server-01
+                        secondaryId: 1001
+                      - id: 223e4567-e89b-12d3-a456-426614174001
+                        name: web-server-02
+                        secondaryId: 1002
+                      - id: 323e4567-e89b-12d3-a456-426614174002
+                        name: web-server-03
+                        secondaryId: 1003
+                    memberGroups: []
+                    inlineObjects:
+                      - id: 423e4567-e89b-12d3-a456-426614174003
+                        secondaryId: 3001
+                        subtype: host
+                        value: 10.1.1.20
+                    metadata:
+                      createdAt: '2025-10-30T10:00:00Z'
+                      updatedAt: '2025-10-30T12:00:00Z'
+                      createdBy: user@cisco.com
+                      updatedBy: admin@cisco.com
+                      version: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete network group
+      description: Delete a network group by ID
+      operationId: deleteNetworkGroup
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the network group to delete
+          schema:
+            type: string
+            format: uuid
+            description: String parameter value
+      responses:
+        '204':
+          description: Network group deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageConflictError'
+              example:
+                code: string
+                message: string
+                usageLocations: []
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/organizations/{orgID}/domains/global/objects/bulk':
+    post:
+      summary: Bulk retrieve objects and groups by IDs
+      description: >-
+        Retrieve multiple network objects and/or groups by their IDs. Control
+        the level of detail in nested objects and groups using the expandObjects
+        parameter.
+      operationId: bulkGetObjects
+      tags:
+        - Objects Endpoints
+      parameters:
+        - $ref: '#/components/parameters/orgID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkObjectsRequest'
+            examples:
+              expanded_objects:
+                summary: Retrieve objects with expanded nested details
+                value:
+                  ids:
+                    - 123e4567-e89b-12d3-a456-426614174000
+                    - 456e7890-e89b-12d3-a456-426614174111
+                  expandObjects: true
+              minimal_objects:
+                summary: Retrieve objects with minimal nested details
+                value:
+                  ids:
+                    - 123e4567-e89b-12d3-a456-426614174000
+                    - 456e7890-e89b-12d3-a456-426614174111
+                  expandObjects: false
+      responses:
+        '200':
+          description: List of resolved objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkObjectsResponse'
+              examples:
+                expanded_response:
+                  summary: Response with expanded nested objects (expandObjects=true)
+                  value:
+                    objects:
+                      - id: 123e4567-e89b-12d3-a456-426614174000
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Primary web server in DMZ
+                        metadata:
+                          createdAt: '2025-10-30T10:00:00Z'
+                          updatedAt: '2025-10-30T10:00:00Z'
+                          createdBy: user@cisco.com
+                          updatedBy: user@cisco.com
+                          version: 1
+                      - id: 456e7890-e89b-12d3-a456-426614174111
+                        secondaryId: 67890
+                        type: networkGroup
+                        name: web-servers
+                        description: All production web servers
+                        memberObjects:
+                          - id: 123e4567-e89b-12d3-a456-426614174000
+                            secondaryId: 12345
+                            type: network
+                            name: web-server-01
+                            subtype: host
+                            value: 192.168.1.10
+                            description: Primary web server in DMZ
+                            metadata:
+                              createdAt: '2025-10-30T09:00:00Z'
+                              updatedAt: '2025-10-30T09:00:00Z'
+                              createdBy: user@cisco.com
+                              updatedBy: user@cisco.com
+                              version: 1
+                        memberGroups:
+                          - id: 789e0123-e89b-12d3-a456-426614174222
+                            secondaryId: 2001
+                            type: networkGroup
+                            name: nested-group-01
+                            description: Nested group of servers
+                            memberObjects:
+                              - id: 223e4567-e89b-12d3-a456-426614174001
+                                secondaryId: 12346
+                                type: network
+                                name: web-server-02
+                                subtype: host
+                                value: 192.168.1.11
+                                description: Secondary web server
+                                metadata:
+                                  createdAt: '2025-10-30T09:30:00Z'
+                                  updatedAt: '2025-10-30T09:30:00Z'
+                                  createdBy: user@cisco.com
+                                  updatedBy: user@cisco.com
+                                  version: 1
+                            memberGroups: []
+                            inlineObjects:
+                              - id: 889e0123-e89b-12d3-a456-426614174223
+                                secondaryId: 3002
+                                subtype: host
+                                value: 192.168.2.10
+                            metadata:
+                              createdAt: '2025-10-29T10:00:00Z'
+                              updatedAt: '2025-10-29T10:00:00Z'
+                              createdBy: user@cisco.com
+                              updatedBy: user@cisco.com
+                              version: 1
+                        inlineObjects:
+                          - id: 999e0123-e89b-12d3-a456-426614174224
+                            secondaryId: 3001
+                            subtype: cidr
+                            value: 10.0.0.0/24
+                        metadata:
+                          createdAt: '2025-10-30T10:00:00Z'
+                          updatedAt: '2025-10-30T10:00:00Z'
+                          createdBy: user@cisco.com
+                          updatedBy: user@cisco.com
+                          version: 1
+                minimal_response:
+                  summary: Response with minimal nested details (expandObjects=false)
+                  value:
+                    objects:
+                      - id: 123e4567-e89b-12d3-a456-426614174000
+                        secondaryId: 12345
+                        type: network
+                        name: web-server-01
+                        subtype: host
+                        value: 192.168.1.10
+                        description: Primary web server in DMZ
+                        metadata:
+                          createdAt: '2025-10-30T10:00:00Z'
+                          updatedAt: '2025-10-30T10:00:00Z'
+                          createdBy: user@cisco.com
+                          updatedBy: user@cisco.com
+                          version: 1
+                      - id: 456e7890-e89b-12d3-a456-426614174111
+                        secondaryId: 67890
+                        type: networkGroup
+                        name: web-servers
+                        description: All production web servers
+                        memberObjects:
+                          - id: 123e4567-e89b-12d3-a456-426614174000
+                            secondaryId: 12345
+                            name: web-server-01
+                        memberGroups:
+                          - id: 789e0123-e89b-12d3-a456-426614174222
+                            secondaryId: 2001
+                            name: nested-group-01
+                        inlineObjects:
+                          - id: 999e0123-e89b-12d3-a456-426614174224
+                            secondaryId: 3001
+                            subtype: cidr
+                            value: 10.0.0.0/24
+                        metadata:
+                          createdAt: '2025-10-30T10:00:00Z'
+                          updatedAt: '2025-10-30T10:00:00Z'
+                          createdBy: user@cisco.com
+                          updatedBy: user@cisco.com
+                          version: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Use the API Key access token generated from SCC in the Authorization
+        header: 'Authorization: Bearer <token>'
+  parameters:
+    orgID:
+      name: orgID
+      in: path
+      required: true
+      description: Organization identifier (UUID format)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+  schemas:
+    ObjectsListResponse:
+      type: object
+      description: Response containing a list of network objects and/or groups
+      required:
+        - objects
+        - pagination
+      properties:
+        objects:
+          type: array
+          description: Array of network objects and/or groups
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/NetworkObject'
+              - $ref: '#/components/schemas/NetworkGroup'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Error:
+      type: object
+      description: >
+        Standard JSON error body for failed requests. `code` and `message` are
+        always present; other properties are optional and may vary by operation.
+
+        Validation failures often include `field` and/or `details`. Specific
+        `code` values and message text may change over time; clients should rely
+        primarily on the HTTP status code.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error identifier; values may vary by release
+        message:
+          type: string
+          description: Human-readable error description; wording may vary by release
+        details:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+          description: Optional additional context (string or structured object)
+        field:
+          type: string
+          description: >-
+            Optional; request field associated with the error (e.g. for
+            validation)
+        trackingId:
+          type: string
+          description: Optional tracking identifier for support and debugging
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional structured data specific to the error
+    NetworkObject:
+      type: object
+      description: 'Network object representing IP addresses, ranges, CIDRs, or FQDNs'
+      required:
+        - id
+        - name
+        - subtype
+        - value
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network object
+          readOnly: true
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network object
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - network
+          readOnly: true
+          description: 'Object type, always "network" for network objects'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Unique among network objects and network groups in your
+            organization's global object scope.
+
+            A network object and a network group cannot share the same name in
+            that scope.
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+
+            Names preserve original case for display but are compared
+            case-insensitively for uniqueness.
+        subtype:
+          type: string
+          enum:
+            - host
+            - range
+            - cidr
+            - fqdn
+          description: |
+            Network object subtype:
+            - host: Single IP address
+            - range: Range of IP addresses
+            - cidr: Network in CIDR notation
+            - fqdn: Fully Qualified Domain Name
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: The network value based on subtype
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the object was created
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the object was last updated
+              readOnly: true
+            createdBy:
+              type: string
+              description: User who created the object
+              readOnly: true
+            updatedBy:
+              type: string
+              description: User who last updated the object
+              readOnly: true
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+              readOnly: true
+        computedMetadata:
+          type: object
+          description: Computed metadata about the network object
+          readOnly: true
+          properties:
+            ipVersion:
+              type: string
+              enum:
+                - ipv4
+                - ipv6
+                - none
+              description: IP version (none for FQDN objects)
+        usageTracking:
+          type: object
+          description: >-
+            Tracking information about which products can use this object and
+            detailed usage statistics
+          readOnly: true
+          properties:
+            usableBy:
+              type: array
+              description: List of products that can use this object
+              items:
+                type: string
+                enum:
+                  - sdWan
+                  - secureAccess
+                  - scc
+                description: List of items
+            usedIn:
+              type: array
+              description: >-
+                List of products where this object is currently used (backward
+                compatible)
+              items:
+                type: string
+                description: Product name
+                example: sdwan
+            usageDetails:
+              type: array
+              description: >-
+                Detailed usage information for each product actively using this
+                object
+              items:
+                type: object
+                required:
+                  - product
+                  - inUse
+                properties:
+                  product:
+                    type: string
+                    description: Product identifier
+                    example: sd-wan
+                  inUse:
+                    type: boolean
+                    description: >-
+                      Whether this product is actively using the object (always
+                      true in this array)
+                    example: true
+                  resourceTypes:
+                    type: array
+                    description: Breakdown of usage by resource type
+                    items:
+                      type: object
+                      required:
+                        - resourceType
+                        - usageCount
+                      properties:
+                        resourceType:
+                          type: string
+                          description: Type of resource using the object
+                          example: policy
+                        usageCount:
+                          type: integer
+                          minimum: 0
+                          description: >-
+                            Number of times the object is used by this resource
+                            type
+                          example: 5
+        memberOf:
+          type: array
+          description: Array of network groups that this object is a member of
+          readOnly: true
+          items:
+            type: object
+            description: Network group reference
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the network group
+              name:
+                type: string
+                description: Name of the network group
+    NetworkGroup:
+      type: object
+      description: Network group containing collections of network objects and other groups
+      required:
+        - id
+        - name
+        - compositionType
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network group
+          readOnly: true
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network group
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - networkGroup
+          readOnly: true
+          description: 'Object type, always "networkGroup" for network groups'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Unique among network objects and network groups in your
+            organization's global object scope (case-insensitive for
+            uniqueness).
+
+            A network object and a network group cannot share the same name in
+            that scope.
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+
+            Names preserve original case for display but are compared
+            case-insensitively for uniqueness.
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network group
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was created
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was last updated
+              readOnly: true
+            createdBy:
+              type: string
+              description: User who created the group
+              readOnly: true
+            updatedBy:
+              type: string
+              description: User who last updated the group
+              readOnly: true
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+              readOnly: true
+        compositionType:
+          type: string
+          enum:
+            - homogeneous
+            - heterogeneous
+          readOnly: true
+          description: |
+            Group composition type:
+            - homogeneous: All objects same subtype and IP version
+            - heterogeneous: Mixed object subtypes/IP versions
+        memberObjects:
+          type: array
+          description: >-
+            Array of network objects that are members of this group with their
+            details
+          items:
+            type: object
+            description: Network object member reference
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the network object
+              name:
+                type: string
+                description: Name of the network object
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the network object
+            required:
+              - id
+              - name
+              - secondaryId
+        memberGroups:
+          type: array
+          description: >-
+            Array of network groups that are members of this group with their
+            details
+          items:
+            type: object
+            description: Network group member reference
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the network group
+              name:
+                type: string
+                description: Name of the network group
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the network group
+            required:
+              - id
+              - name
+              - secondaryId
+        inlineObjects:
+          type: array
+          description: Array of inline network objects defined directly within the group
+          items:
+            type: object
+            required:
+              - subtype
+              - value
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Unique identifier for the inline object
+                readOnly: true
+              secondaryId:
+                type: integer
+                description: Secondary identifier for the inline object
+                readOnly: true
+              subtype:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: Network object subtype
+              value:
+                type: string
+                description: 'Network value (IP, CIDR, FQDN, etc.)'
+            description: List of items
+        computedMetadata:
+          type: object
+          description: |
+            Computed metadata about the group's contents.
+          readOnly: true
+          properties:
+            totalObjectCount:
+              type: integer
+              description: >-
+                Total number of network objects in the group (including nested).
+                May be omitted depending on authentication type.
+            totalGroupCount:
+              type: integer
+              description: >-
+                Total number of nested groups. May be omitted depending on
+                authentication type.
+            ipVersionsPresent:
+              type: array
+              description: >-
+                List of IP versions present in the group. May be omitted
+                depending on authentication type.
+              items:
+                type: string
+                enum:
+                  - ipv4
+                  - ipv6
+                  - none
+                description: List of items
+            subtypesPresent:
+              type: array
+              description: >-
+                List of object subtypes present in the group. May be omitted
+                depending on authentication type.
+              items:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: List of items
+            maxNestingDepth:
+              type: integer
+              description: >-
+                Maximum depth of group nesting (0 if no nested groups, 1+ for
+                nested groups). Typically present for all supported
+                authentication types.
+        usageTracking:
+          type: object
+          description: >-
+            Tracking information about which products can use this group and
+            detailed usage statistics
+          readOnly: true
+          properties:
+            usableBy:
+              type: array
+              description: List of products that can use this group
+              items:
+                type: string
+                enum:
+                  - sdWan
+                  - secureAccess
+                  - scc
+                description: List of items
+            usedIn:
+              type: array
+              description: >-
+                List of products where this group is currently used (backward
+                compatible)
+              items:
+                type: string
+                description: Product name
+                example: sdwan
+            usageDetails:
+              type: array
+              description: >-
+                Detailed usage information for each product actively using this
+                group
+              items:
+                type: object
+                required:
+                  - product
+                  - inUse
+                properties:
+                  product:
+                    type: string
+                    description: Product identifier
+                    example: sd-wan
+                  inUse:
+                    type: boolean
+                    description: >-
+                      Whether this product is actively using the group (always
+                      true in this array)
+                    example: true
+                  resourceTypes:
+                    type: array
+                    description: Breakdown of usage by resource type
+                    items:
+                      type: object
+                      required:
+                        - resourceType
+                        - usageCount
+                      properties:
+                        resourceType:
+                          type: string
+                          description: Type of resource using the group
+                          example: policy
+                        usageCount:
+                          type: integer
+                          minimum: 0
+                          description: >-
+                            Number of times the group is used by this resource
+                            type
+                          example: 5
+        memberOf:
+          type: array
+          description: Array of network groups that this group is a member of
+          readOnly: true
+          items:
+            type: object
+            description: Network group reference
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the network group
+              name:
+                type: string
+                description: Name of the network group
+    ExpandedNetworkGroup:
+      type: object
+      description: >-
+        Network group with fully expanded member objects and nested groups (used
+        when expandObjects=true in bulk operations)
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network group
+          readOnly: true
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network group
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - networkGroup
+          readOnly: true
+          description: 'Object type, always "networkGroup" for network groups'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Unique name within your organization's global object scope
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network group
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was created
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was last updated
+              readOnly: true
+            createdBy:
+              type: string
+              description: User who created the group
+              readOnly: true
+            updatedBy:
+              type: string
+              description: User who last updated the group
+              readOnly: true
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+              readOnly: true
+        memberObjects:
+          type: array
+          description: >-
+            Array of fully expanded network objects that are members of this
+            group
+          items:
+            $ref: '#/components/schemas/NetworkObject'
+        memberGroups:
+          type: array
+          description: >-
+            Array of fully expanded network groups that are members of this
+            group
+          items:
+            $ref: '#/components/schemas/ExpandedNetworkGroup'
+        inlineObjects:
+          type: array
+          description: Array of inline network objects defined directly within the group
+          items:
+            type: object
+            required:
+              - subtype
+              - value
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Unique identifier for the inline object
+                readOnly: true
+              secondaryId:
+                type: integer
+                description: Secondary identifier for the inline object
+                readOnly: true
+              subtype:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: Network object subtype
+              value:
+                type: string
+                description: 'Network value (IP, CIDR, FQDN, etc.)'
+        computedMetadata:
+          type: object
+          description: |
+            Computed metadata about the group's contents.
+          readOnly: true
+          properties:
+            totalObjectCount:
+              type: integer
+              description: >-
+                Total number of network objects in the group (including nested).
+                May be omitted depending on authentication type.
+            totalGroupCount:
+              type: integer
+              description: >-
+                Total number of nested groups. May be omitted depending on
+                authentication type.
+            ipVersionsPresent:
+              type: array
+              description: >-
+                List of IP versions present in the group. May be omitted
+                depending on authentication type.
+              items:
+                type: string
+                enum:
+                  - ipv4
+                  - ipv6
+                  - none
+            subtypesPresent:
+              type: array
+              description: >-
+                List of object subtypes present in the group. May be omitted
+                depending on authentication type.
+              items:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+            maxNestingDepth:
+              type: integer
+              description: >-
+                Maximum depth of group nesting (0 if no nested groups, 1+ for
+                nested groups). Typically present for all supported
+                authentication types.
+    NetworkObjectWithoutUsage:
+      type: object
+      description: >-
+        Network object representation without usage tracking information (used
+        in create/update responses)
+      required:
+        - id
+        - name
+        - subtype
+        - value
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network object
+          readOnly: true
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network object
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - network
+          readOnly: true
+          description: 'Object type, always "network" for network objects'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Unique among network objects and network groups in your
+            organization's global object scope (case-insensitive for
+            uniqueness).
+
+            A network object and a network group cannot share the same name in
+            that scope.
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+
+            Names preserve original case for display but are compared
+            case-insensitively for uniqueness.
+        subtype:
+          type: string
+          enum:
+            - host
+            - range
+            - cidr
+            - fqdn
+          description: |
+            Network object subtype:
+            - host: Single IP address
+            - range: Range of IP addresses
+            - cidr: Network in CIDR notation
+            - fqdn: Fully Qualified Domain Name
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: The network value based on subtype
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the object was created
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the object was last updated
+              readOnly: true
+            createdBy:
+              type: string
+              description: User who created the object
+              readOnly: true
+            updatedBy:
+              type: string
+              description: User who last updated the object
+              readOnly: true
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+              readOnly: true
+        computedMetadata:
+          type: object
+          description: Computed metadata about the network object
+          readOnly: true
+          properties:
+            ipVersion:
+              type: string
+              enum:
+                - ipv4
+                - ipv6
+                - none
+              description: IP version (none for FQDN objects)
+    NetworkGroupWithoutUsage:
+      type: object
+      description: >
+        Network group representation without usage tracking information (used in
+        create/update responses).
+
+        In some responses, `compositionType` and `computedMetadata` may be
+        omitted.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network group
+          readOnly: true
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network group
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - networkGroup
+          readOnly: true
+          description: 'Object type, always "networkGroup" for network groups'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Unique among network objects and network groups in your
+            organization's global object scope (case-insensitive for
+            uniqueness).
+
+            A network object and a network group cannot share the same name in
+            that scope.
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+
+            Names preserve original case for display but are compared
+            case-insensitively for uniqueness.
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network group
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was created
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was last updated
+              readOnly: true
+            createdBy:
+              type: string
+              description: User who created the group
+              readOnly: true
+            updatedBy:
+              type: string
+              description: User who last updated the group
+              readOnly: true
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+              readOnly: true
+        compositionType:
+          type: string
+          enum:
+            - homogeneous
+            - heterogeneous
+          readOnly: true
+          description: |
+            Group composition type:
+            - homogeneous: All objects same subtype and IP version
+            - heterogeneous: Mixed object subtypes/IP versions
+        memberObjects:
+          type: array
+          description: 'Member network objects (references with id, name, and secondaryId)'
+          items:
+            type: object
+            description: Network object member reference
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the network object
+              name:
+                type: string
+                description: Name of the network object
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the network object
+            required:
+              - id
+              - name
+              - secondaryId
+        memberGroups:
+          type: array
+          description: 'Member network groups (references with id, name, and secondaryId)'
+          items:
+            type: object
+            description: Network group member reference
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the network group
+              name:
+                type: string
+                description: Name of the network group
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the network group
+            required:
+              - id
+              - name
+              - secondaryId
+        inlineObjects:
+          type: array
+          description: Array of inline network objects defined directly within the group
+          items:
+            type: object
+            required:
+              - subtype
+              - value
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Unique identifier for the inline object
+                readOnly: true
+              secondaryId:
+                type: integer
+                description: Secondary identifier for the inline object
+                readOnly: true
+              subtype:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: Network object subtype
+              value:
+                type: string
+                description: 'Network value (IP, CIDR, FQDN, etc.)'
+            description: List of items
+        computedMetadata:
+          type: object
+          description: >
+            Summary metadata for the group's contents, derived from member
+            objects, inline objects, and nested groups.
+
+            The same summary fields are used as in list and get object responses
+            for consistency.
+          readOnly: true
+          properties:
+            totalObjectCount:
+              type: integer
+              description: >-
+                Total number of network objects in the group (member objects +
+                inline objects, excluding nested groups)
+              example: 5
+            totalGroupCount:
+              type: integer
+              description: >-
+                Total number of nested groups that are direct members of this
+                group
+              example: 2
+            ipVersionsPresent:
+              type: array
+              description: >-
+                List of unique IP versions found across all member objects and
+                inline objects (aggregated from nested groups)
+              items:
+                type: string
+                enum:
+                  - ipv4
+                  - ipv6
+                  - none
+              example:
+                - ipv4
+                - ipv6
+            subtypesPresent:
+              type: array
+              description: >-
+                List of unique object subtypes found across all member objects
+                and inline objects (aggregated from nested groups)
+              items:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+              example:
+                - host
+                - cidr
+            maxNestingDepth:
+              type: integer
+              description: >-
+                Maximum depth of group nesting (0 if no nested groups, 1 if
+                direct nested groups, 2+ for deeper nesting)
+              example: 1
+    CreateNetworkObjectRequest:
+      type: object
+      description: Request payload for creating a new network object
+      required:
+        - name
+        - subtype
+        - value
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Object name (must be unique among objects and groups in your
+            organization's global scope, case-insensitive).
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+        subtype:
+          type: string
+          enum:
+            - host
+            - range
+            - cidr
+            - fqdn
+          description: Network object subtype
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Network value (IP address, CIDR, range, or FQDN)'
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network object
+    UpdateNetworkObjectRequest:
+      type: object
+      description: Request payload for updating an existing network object
+      required:
+        - name
+        - subtype
+        - value
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Object name (must be unique among objects and groups in your
+            organization's global scope, case-insensitive).
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+        subtype:
+          type: string
+          enum:
+            - host
+            - range
+            - cidr
+            - fqdn
+          description: Network object subtype
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Network value (IP address, CIDR, range, or FQDN)'
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network object
+    CreateNetworkGroupRequest:
+      type: object
+      description: Request payload for creating a new network group
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Group name (must be unique among objects and groups in your
+            organization's global scope, case-insensitive).
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network group
+        memberObjects:
+          type: array
+          description: Array of network object IDs to include in the group
+          items:
+            type: string
+            format: uuid
+            description: List of items
+        memberGroups:
+          type: array
+          description: Array of child group IDs to include in the group
+          items:
+            type: string
+            format: uuid
+            description: List of items
+        inlineObjects:
+          type: array
+          description: Array of inline network objects to create within the group
+          items:
+            type: object
+            required:
+              - subtype
+              - value
+            properties:
+              subtype:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: Network object subtype
+              value:
+                type: string
+                description: 'Network value (IP, CIDR, FQDN, etc.)'
+            description: List of items
+    UpdateNetworkGroupRequest:
+      type: object
+      description: Request payload for updating an existing network group
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_.\ -]+$'
+          description: >
+            Group name (must be unique among objects and groups in your
+            organization's global scope, case-insensitive).
+
+            Allowed: alphanumeric (a-z, A-Z, 0-9), underscore (_), hyphen (-),
+            period (.), and space (discouraged).
+
+            Prohibited: Special characters, leading/trailing spaces, consecutive
+            spaces.
+
+            Maximum length: 32 characters.
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional description of the network group
+        memberObjects:
+          type: array
+          description: Array of network object IDs to include in the group
+          items:
+            type: string
+            format: uuid
+            description: List of items
+        memberGroups:
+          type: array
+          description: Array of child group IDs to include in the group
+          items:
+            type: string
+            format: uuid
+            description: List of items
+        inlineObjects:
+          type: array
+          description: Array of inline network objects within the group
+          items:
+            type: object
+            required:
+              - subtype
+              - value
+            properties:
+              subtype:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: Network object subtype
+              value:
+                type: string
+                description: 'Network value (IP, CIDR, FQDN, etc.)'
+            description: List of items
+    UsageConflictError:
+      type: object
+      description: >
+        Response body for HTTP 409 Conflict when deleting a network object or
+        group that is still in use.
+
+        May include usage location details in `usageLocations`.
+      required:
+        - code
+        - message
+        - usageLocations
+      properties:
+        code:
+          type: string
+          description: Machine-readable error identifier; values may vary by release
+        message:
+          type: string
+          description: Human-readable error description
+        objectId:
+          type: string
+          format: uuid
+          description: ID of the object/group that cannot be deleted
+        objectName:
+          type: string
+          description: Name of the object/group that cannot be deleted
+        objectType:
+          type: string
+          enum:
+            - network_object
+            - network_group
+          description: Type of the object that cannot be deleted
+        usageLocations:
+          type: array
+          description: List of locations where the object/group is being used
+          items:
+            type: object
+            required:
+              - locationType
+              - locationName
+              - count
+            properties:
+              locationType:
+                type: string
+                enum:
+                  - policy
+                  - network_group
+                  - firewall_rule
+                  - routing_rule
+                  - other
+                description: Type of location where the object is used
+              locationName:
+                type: string
+                description: Human-readable name of the location
+                example: Security Policies
+              product:
+                type: string
+                enum:
+                  - sdWan
+                  - secureAccess
+                  - scc
+                description: Product where this usage exists
+              count:
+                type: integer
+                description: Number of items using the object at this location
+                example: 7
+              navigationUrl:
+                type: string
+                description: >-
+                  Optional URL to navigate to this location in the product UI.
+                  For external product policies, this would link to their policy
+                  management page.
+                example: /security/policies
+              items:
+                type: array
+                description: >
+                  List of specific items using the object. This field is
+                  optional and may not be populated
+
+                  for external product policies where individual policy line
+                  items are not exposed through this API.
+
+                  Often populated when the usage location is another network
+                  group managed here.
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                      description: ID of the item using the object
+                    name:
+                      type: string
+                      description: Name of the item using the object
+                    type:
+                      type: string
+                      description: Type of the item
+                      example: network_group
+                    navigationUrl:
+                      type: string
+                      description: Optional URL to navigate directly to this item
+                  description: List of items
+            description: List of items
+    Pagination:
+      type: object
+      description: >-
+        Pagination information for list responses. Supports both offset-based
+        and cursor-based pagination.
+      properties:
+        limit:
+          type: integer
+          description: Maximum number of items returned in this response
+        offset:
+          type: integer
+          description: Number of items skipped (for offset-based pagination)
+        total:
+          type: integer
+          description: Total number of items matching the query
+        hasMore:
+          type: boolean
+          description: Whether there are more items available after this page
+        next:
+          type: string
+          nullable: true
+          description: Cursor for the next page of results (null if no more results)
+        prev:
+          type: string
+          nullable: true
+          description: Cursor for the previous page of results (null if at beginning)
+    BulkObjectsRequest:
+      type: object
+      description: >-
+        Request payload for bulk object retrieval with optional expansion
+        control
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          description: List of object/group UUIDs to retrieve
+          items:
+            type: string
+            format: uuid
+            description: Object or group UUID
+          minItems: 1
+          maxItems: 1000
+        expandObjects:
+          type: boolean
+          description: >
+            Control the level of detail in nested objects and groups:
+
+            - true: Return full details for nested memberObjects and
+            memberGroups (includes all fields, metadata, computedMetadata)
+
+            - false: Return only id, secondaryId, and name for nested
+            memberObjects and memberGroups
+          default: false
+    BulkObjectsResponse:
+      type: object
+      description: Response payload for bulk object retrieval
+      required:
+        - objects
+      properties:
+        objects:
+          type: array
+          description: >-
+            Array of resolved objects (network objects and/or groups). Excludes
+            computedMetadata. When expandObjects=true, groups are returned as
+            ExpandedNetworkGroup with full member details.
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/BulkNetworkObjectResponse'
+              - $ref: '#/components/schemas/BulkNetworkGroupResponse'
+              - $ref: '#/components/schemas/ExpandedNetworkGroup'
+    BulkNetworkObjectResponse:
+      type: object
+      description: Network object response for bulk operations (excludes computedMetadata)
+      required:
+        - id
+        - name
+        - type
+        - subtype
+        - value
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network object
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network object
+        type:
+          type: string
+          enum:
+            - network
+          description: Object type
+        name:
+          type: string
+          description: Name of the network object
+        subtype:
+          type: string
+          enum:
+            - host
+            - range
+            - cidr
+            - fqdn
+          description: Network object subtype
+        value:
+          type: string
+          description: 'Network value (IP, CIDR, FQDN, etc.)'
+        description:
+          type: string
+          description: Optional description
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the object was created
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the object was last updated
+            createdBy:
+              type: string
+              description: User who created the object
+            updatedBy:
+              type: string
+              description: User who last updated the object
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+        memberOf:
+          type: array
+          description: Groups this object belongs to
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the parent network group
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the parent network group
+              name:
+                type: string
+                description: Name of the parent network group
+    BulkNetworkGroupResponse:
+      type: object
+      description: Network group response for bulk operations (excludes computedMetadata)
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the network group
+        secondaryId:
+          type: integer
+          description: Secondary identifier for the network group
+        type:
+          type: string
+          enum:
+            - networkGroup
+          description: Object type
+        name:
+          type: string
+          description: Name of the network group
+        description:
+          type: string
+          description: Optional description
+        metadata:
+          type: object
+          description: Metadata containing audit information
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was created
+            updatedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the group was last updated
+            createdBy:
+              type: string
+              description: User who created the group
+            updatedBy:
+              type: string
+              description: User who last updated the group
+            version:
+              type: integer
+              description: Version number for optimistic concurrency control
+        memberObjects:
+          type: array
+          description: 'Member object references (id, secondaryId, name only)'
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the member network object
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the member network object
+              name:
+                type: string
+                description: Name of the member network object
+        memberGroups:
+          type: array
+          description: 'Member group references (id, secondaryId, name only)'
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the member network group
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the member network group
+              name:
+                type: string
+                description: Name of the member network group
+        inlineObjects:
+          type: array
+          description: Inline network objects
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Unique identifier for the inline object
+              secondaryId:
+                type: integer
+                description: Secondary identifier for the inline object
+              subtype:
+                type: string
+                enum:
+                  - host
+                  - range
+                  - cidr
+                  - fqdn
+                description: Network object subtype
+              value:
+                type: string
+                description: 'Network value (IP address, CIDR, FQDN, etc.)'
+        memberOf:
+          type: array
+          description: Groups this group belongs to
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: UUID of the parent network group
+              secondaryId:
+                type: integer
+                description: Secondary identifier of the parent network group
+              name:
+                type: string
+                description: Name of the parent network group
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    MisdirectedRequest:
+      description: Misdirected Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    TooManyRequests:
+      description: Too Many Requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
+    UnprocessableEntity:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: string
+            message: string
